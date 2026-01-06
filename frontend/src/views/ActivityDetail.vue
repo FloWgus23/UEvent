@@ -26,13 +26,21 @@
           alt="Activity Banner"
         />
         <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent p-8 flex flex-col justify-end">
+          
           <div class="flex flex-wrap gap-3 mb-4 animate-slide-up delay-100">
-            <span v-if="isActivityEnded" class="px-4 py-1.5 bg-red-600/90 text-white backdrop-blur-sm rounded-full text-sm font-bold shadow-sm flex items-center gap-2">
-               <i class="fa-solid fa-flag-checkered animate-wave"></i> สิ้นสุดแล้ว
+            
+            <span v-if="activityStatus === 'ended'" class="px-4 py-1.5 bg-red-600/90 text-white backdrop-blur-sm rounded-full text-sm font-bold shadow-sm flex items-center gap-2">
+               <i class="fa-solid fa-flag-checkered"></i> สิ้นสุดแล้ว
             </span>
+
+            <span v-else-if="activityStatus === 'ongoing'" class="px-4 py-1.5 bg-blue-600/90 text-white backdrop-blur-sm rounded-full text-sm font-bold shadow-sm flex items-center gap-2">
+               <i class="fa-solid fa-play-circle animate-pulse"></i> กำลังดำเนินการ
+            </span>
+
             <span v-else-if="activity.registered_count >= activity.capacity" class="px-4 py-1.5 bg-orange-500/90 text-white backdrop-blur-sm rounded-full text-sm font-bold shadow-sm flex items-center gap-2">
                <i class="fa-solid fa-users-slash"></i> ที่นั่งเต็ม
             </span>
+
             <span v-else class="px-4 py-1.5 bg-green-500/90 text-white backdrop-blur-sm rounded-full text-sm font-bold shadow-sm flex items-center gap-2">
                <i class="fa-solid fa-ticket"></i> เปิดรับสมัคร
             </span>
@@ -41,6 +49,7 @@
                <i :class="getCategoryIcon(activity.category)"></i> {{ activity.category }}
             </span>
           </div>
+
           <h1 class="text-4xl md:text-5xl font-extrabold text-white drop-shadow-2xl leading-tight animate-slide-up delay-200">{{ activity.name }}</h1>
         </div>
       </div>
@@ -130,12 +139,12 @@
                  <div class="h-3 bg-blue-100 rounded-full overflow-hidden shadow-inner">
                    <div 
                       :class="['h-full rounded-full transition-all duration-1000 ease-out relative overflow-hidden', 
-                               isActivityEnded ? 'bg-gray-400' :
+                               activityStatus === 'ended' ? 'bg-gradient-to-r from-red-500 to-orange-500' :
                                activity.registered_count >= activity.capacity ? 'bg-gradient-to-r from-orange-500 to-red-500' : 
                                'bg-gradient-to-r from-blue-500 to-teal-400']"
                       :style="`width: ${Math.min((activity.registered_count / activity.capacity) * 100, 100)}%`"
                    >
-                     <div v-if="!isActivityEnded && activity.registered_count < activity.capacity" class="absolute inset-0 bg-white/30 animate-shimmer" style="transform: skewX(-20deg);"></div>
+                     <div v-if="activityStatus === 'upcoming' && activity.registered_count < activity.capacity" class="absolute inset-0 bg-white/30 animate-shimmer" style="transform: skewX(-20deg);"></div>
                    </div>
                  </div>
                </div>
@@ -144,7 +153,34 @@
             <div class="pt-2">
               <template v-if="isLoggedIn">
                 
-                <div v-if="isRegistered" class="space-y-4 animate-fade-in">
+                <!-- ⭐ เพิ่ม: แสดงถ้าเป็นผู้จัดกิจกรรม -->
+                <div v-if="isActivityOwner" class="space-y-4 animate-fade-in">
+                  <div class="bg-blue-50 border-2 border-blue-200 rounded-2xl p-5 text-center relative overflow-hidden shadow-sm">
+                    <div class="absolute -right-4 -top-4 text-blue-100 text-6xl z-0 opacity-50">
+                      <i class="fa-solid fa-user-tie"></i>
+                    </div>
+                    <div class="relative z-10">
+                      <div class="flex items-center justify-center gap-2 text-blue-700 font-extrabold text-xl mb-2">
+                        <i class="fa-solid fa-crown text-2xl text-yellow-500"></i>
+                        <span>คุณเป็นผู้จัดกิจกรรมนี้</span>
+                      </div>
+                      <p class="text-blue-600 text-sm font-medium">
+                        คุณไม่สามารถลงทะเบียนกิจกรรมของตัวเองได้
+                      </p>
+                    </div>
+                  </div>
+
+                  <router-link
+                    to="/organizer/dashboard"
+                    class="block w-full py-3.5 text-center rounded-2xl font-bold text-lg shadow-md transition-all transform hover:-translate-y-1 active:scale-95 text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 group"
+                  >
+                    <span>จัดการกิจกรรม</span>
+                    <i class="fa-solid fa-arrow-right ml-2 group-hover:translate-x-1 transition-transform"></i>
+                  </router-link>
+                </div>
+
+                <!-- แสดงถ้าลงทะเบียนแล้ว -->
+                <div v-else-if="isRegistered" class="space-y-4 animate-fade-in">
                   <div class="bg-green-50 border border-green-200 rounded-2xl p-4 text-center relative overflow-hidden shadow-sm">
                     <div class="absolute -right-4 -top-4 text-green-100 text-6xl z-0 opacity-50">
                       <i class="fa-solid fa-circle-check"></i>
@@ -170,25 +206,35 @@
                 </div>
 
                 <div v-else>
+                  
                   <button 
-                    v-if="isActivityEnded"
+                    v-if="activityStatus === 'ended'"
                     disabled
                     class="w-full py-4 rounded-2xl font-bold text-xl text-white shadow-lg bg-gradient-to-r from-red-500 to-orange-500 cursor-not-allowed relative overflow-hidden group"
                   >
                     <div class="absolute inset-0 bg-black/10 group-hover:bg-black/20 transition-colors"></div>
                     <div class="flex items-center justify-center gap-3 relative z-10">
                        <i class="fa-solid fa-flag-checkered text-2xl animate-wave drop-shadow-sm"></i>
-                       <span class="drop-shadow-sm tracking-wider">สิ้นสุดแล้ว</span>
+                       <span class="tracking-wider drop-shadow-sm">สิ้นสุดแล้ว</span>
                     </div>
-                    <div class="absolute -bottom-4 -right-4 text-red-600/20 text-6xl z-0 transform rotate-12">
-                      <i class="fa-solid fa-hourglass-end"></i>
+                  </button>
+
+                  <button 
+                    v-else-if="activityStatus === 'ongoing'"
+                    disabled
+                    class="w-full py-4 rounded-2xl font-bold text-xl text-white shadow-lg bg-gradient-to-r from-blue-500 to-indigo-500 cursor-not-allowed relative overflow-hidden"
+                  >
+                    <div class="flex items-center justify-center gap-3">
+                       <i class="fa-solid fa-spinner fa-spin text-2xl"></i>
+                       <span class="tracking-wide">กำลังดำเนินการ</span>
                     </div>
+                    <div class="absolute inset-0 bg-white/10 animate-pulse"></div>
                   </button>
 
                   <button 
                     v-else-if="activity.registered_count >= activity.capacity"
                     disabled
-                    class="w-full py-3.5 rounded-2xl font-bold text-lg shadow-md text-white bg-gray-400 cursor-not-allowed flex items-center justify-center gap-2"
+                    class="w-full py-3.5 rounded-2xl font-bold text-lg shadow-md text-white bg-red-400 cursor-not-allowed flex items-center justify-center gap-2"
                   >
                     <i class="fa-solid fa-users-slash text-xl"></i>
                     <span>ที่นั่งเต็มแล้ว</span>
@@ -338,7 +384,7 @@ import { useRoute, useRouter } from 'vue-router'
 import activityService from '@/services/activityService'
 import apiClient from '@/services/api.js'
 
-// --- Helper Functions (สำหรับไอคอนหมวดหมู่) ---
+// --- Helper Functions ---
 const getCategoryIcon = (categoryName) => {
     const iconMap = {
         'วิชาการ': 'fa-solid fa-book-open',
@@ -358,6 +404,7 @@ const router = useRouter()
 const activity = ref(null)
 const isLoading = ref(true)
 const isLoggedIn = ref(false)
+const currentUserId = ref(null)  // ⭐ เพิ่ม: เก็บ user id ของผู้ใช้ปัจจุบัน
 
 const isRegistered = ref(false)
 const registrationDate = ref(null)
@@ -370,34 +417,47 @@ const form = ref({
   note: ''
 })
 
-// Computed: เช็คว่ากิจกรรมจบหรือยัง
-const isActivityEnded = computed(() => {
-  if (!activity.value) return false
-  
-  if (activity.value.status === 'สิ้นสุดแล้ว') return true
-  
-  if (!activity.value.date) return false
+// ⭐ เพิ่ม: Computed เช็คว่าเป็นเจ้าของกิจกรรมหรือไม่
+const isActivityOwner = computed(() => {
+  if (!activity.value || !currentUserId.value) return false
+  return activity.value.owner_id === currentUserId.value
+})
+
+// Computed: Activity Status Logic (เช็คเวลาจริง)
+const activityStatus = computed(() => {
+  if (!activity.value) return 'loading'
+  if (activity.value.status === 'สิ้นสุดแล้ว') return 'ended'
+  if (!activity.value.date) return 'upcoming' // ไม่ระบุวัน ถือว่าเปิดตลอด
 
   const now = new Date()
-  const activityDate = new Date(activity.value.date) 
+  const date = new Date(activity.value.date)
   
-  const todayReset = new Date()
-  todayReset.setHours(0,0,0,0)
-  
-  const actDateReset = new Date(activityDate)
-  actDateReset.setHours(0,0,0,0)
-
-  if (actDateReset < todayReset) return true
-
-  if (actDateReset.getTime() === todayReset.getTime() && activity.value.end_time) {
-      const [hours, minutes] = activity.value.end_time.split(':')
-      const endTime = new Date()
-      endTime.setHours(parseInt(hours), parseInt(minutes), 0)
-      
-      return now > endTime
+  // สร้าง DateTime เริ่มต้น
+  const startDateTime = new Date(date)
+  if (activity.value.start_time) {
+      const [sh, sm] = activity.value.start_time.split(':')
+      startDateTime.setHours(parseInt(sh), parseInt(sm), 0)
+  } else {
+      startDateTime.setHours(0, 0, 0)
   }
 
-  return false
+  // สร้าง DateTime สิ้นสุด
+  const endDateTime = new Date(date)
+  if (activity.value.end_time) {
+      const [eh, em] = activity.value.end_time.split(':')
+      endDateTime.setHours(parseInt(eh), parseInt(em), 59)
+  } else {
+      endDateTime.setHours(23, 59, 59)
+  }
+
+  // เช็คสถานะตามเวลา
+  if (now > endDateTime) {
+      return 'ended'           // 🏁 จบแล้ว
+  } else if (now >= startDateTime && now <= endDateTime) {
+      return 'ongoing'         // ⚠️ กำลังดำเนินการ
+  } else {
+      return 'upcoming'        // ✅ ยังไม่ถึงเวลา (เปิดรับสมัคร)
+  }
 })
 
 // Format Date Functions
@@ -494,21 +554,32 @@ const confirmRegistration = async () => {
     
   } catch (err) {
     console.error(err)
-    const errorMsg = err.response?.data?.message || 'เกิดข้อผิดพลาดในการลงทะเบียน'
+    // ⭐ แก้ไข: ดึง error message จาก backend (รองรับทั้ง error และ message)
+    const errorMsg = err.response?.data?.error || err.response?.data?.message || 'เกิดข้อผิดพลาดในการลงทะเบียน'
     alert('❌ ' + errorMsg)
   } finally {
     isSubmitting.value = false
   }
 }
 
-onMounted(() => {
+onMounted(async () => {
   isLoggedIn.value = !!localStorage.getItem('access')
+  
+  // ⭐ ถ้า login แล้ว ดึง user id
+  if (isLoggedIn.value) {
+    try {
+      const response = await apiClient.get('/user/profile/')
+      currentUserId.value = response.data.id
+    } catch (err) {
+      console.error('Error fetching user id:', err)
+    }
+  }
+  
   fetchDetail()
 })
 </script>
 
 <style scoped>
-/* Font Awesome & Google Fonts are assumed to be loaded globally */
 @import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css');
 
 /* Animations */
@@ -524,7 +595,6 @@ onMounted(() => {
   width: 50%;
 }
 
-/* Animation Keyframes */
 @keyframes fadeUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes slideUp { from { opacity: 0; transform: translateY(40px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
@@ -533,11 +603,9 @@ onMounted(() => {
 @keyframes wave { 0%, 100% { transform: rotate(0deg); } 25% { transform: rotate(-5deg); } 75% { transform: rotate(5deg); } }
 @keyframes shimmer { from { transform: translateX(-150%) skewX(-20deg); } to { transform: translateX(350%) skewX(-20deg); } }
 
-/* Utility */
 .delay-100 { animation-delay: 0.1s; }
 .delay-200 { animation-delay: 0.2s; }
 
-/* Modal Transition */
 .modal-enter-active, .modal-leave-active { transition: opacity 0.2s ease; }
 .modal-enter-from, .modal-leave-to { opacity: 0; }
 </style>

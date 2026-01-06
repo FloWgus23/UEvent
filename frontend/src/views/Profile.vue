@@ -131,6 +131,31 @@
               </div>
             </div>
 
+            <!-- ⭐ เพิ่มส่วนนี้: แสดง เพศ -->
+            <div class="space-y-1">
+              <label class="text-sm text-gray-500">เพศ</label>
+              <div class="font-medium text-gray-900 bg-gray-50 px-4 py-3 rounded-xl border border-gray-100">
+                {{ getGenderDisplay(user.profile?.gender) }}
+              </div>
+            </div>
+
+            <!-- ⭐ เพิ่มส่วนนี้: แสดง คณะ -->
+            <div class="space-y-1">
+              <label class="text-sm text-gray-500">คณะ</label>
+              <div class="font-medium text-gray-900 bg-gray-50 px-4 py-3 rounded-xl border border-gray-100">
+                {{ getFacultyDisplay(user.profile?.faculty) }}
+              </div>
+            </div>
+
+            <!-- ⭐ เพิ่มส่วนนี้: แสดง วันเกิด -->
+            <div class="space-y-1">
+              <label class="text-sm text-gray-500">วันเกิด</label>
+              <div class="font-medium text-gray-900 bg-gray-50 px-4 py-3 rounded-xl border border-gray-100">
+                <i class="fa-solid fa-cake-candles mr-2 text-pink-500"></i>
+                {{ formatBirthdate(user.profile?.birthdate) }}
+              </div>
+            </div>
+
           </div>
 
 
@@ -192,6 +217,51 @@
               >
             </div>
 
+            <!-- ⭐ เพิ่มส่วนนี้: เพศ -->
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">เพศ</label>
+              <select 
+                v-model="editForm.gender" 
+                class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+              >
+                <option value="">เลือกเพศ</option>
+                <option value="male">ชาย</option>
+                <option value="female">หญิง</option>
+                <option value="other">อื่นๆ</option>
+              </select>
+            </div>
+
+            <!-- ⭐ เพิ่มส่วนนี้: คณะ -->
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">คณะ</label>
+              <select 
+                v-model="editForm.faculty" 
+                class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+              >
+                <option value="">เลือกคณะ</option>
+                <option value="science">คณะวิทยาศาสตร์</option>
+                <option value="engineering">คณะวิศวกรรมศาสตร์</option>
+                <option value="business">คณะบริหารศาสตร์</option>
+                <option value="liberal_arts">คณะศิลปศาสตร์</option>
+                <option value="agriculture">คณะเกษตรศาสตร์</option>
+                <option value="nursing">คณะพยาบาลศาสตร์</option>
+                <option value="pharmacy">คณะเภสัชศาสตร์</option>
+                <option value="law">คณะนิติศาสตร์</option>
+                <option value="political">คณะรัฐศาสตร์</option>
+                <option value="other">อื่นๆ</option>
+              </select>
+            </div>
+
+            <!-- ⭐ เพิ่มส่วนนี้: วันเกิด -->
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">วันเกิด</label>
+              <input 
+                v-model="editForm.birthdate" 
+                type="date" 
+                class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+              >
+            </div>
+
           </div>
         </div>
 
@@ -234,7 +304,10 @@ const editForm = ref({
   first_name: '',
   last_name: '',
   email: '',
-  phone: ''
+  phone: '',
+  gender: '',
+  faculty: '',
+  birthdate: ''
 })
 
 const fetchUserProfile = async () => {
@@ -249,7 +322,10 @@ const fetchUserProfile = async () => {
       first_name: user.value.first_name || '',
       last_name: user.value.last_name || '',
       email: user.value.email || '',
-      phone: user.value.profile?.phone || ''
+      phone: user.value.profile?.phone || '',
+      gender: user.value.profile?.gender || '',
+      faculty: user.value.profile?.faculty || '',
+      birthdate: user.value.profile?.birthdate || ''
     }
   } catch (err) {
     console.error(err)
@@ -282,6 +358,49 @@ const getDisplayName = () => {
   
   // ถ้าไม่มีอะไรเลย ให้ใช้ username
   return user.value.username || 'ไม่ระบุชื่อ'
+}
+
+// ⭐ ฟังก์ชันแปลงเพศ
+const getGenderDisplay = (gender) => {
+  const genderMap = {
+    'male': 'ชาย',
+    'female': 'หญิง',
+    'other': 'อื่นๆ'
+  }
+  return genderMap[gender] || '-'
+}
+
+// ⭐ ฟังก์ชันแปลงคณะ
+const getFacultyDisplay = (faculty) => {
+  const facultyMap = {
+    'science': 'คณะวิทยาศาสตร์',
+    'engineering': 'คณะวิศวกรรมศาสตร์',
+    'business': 'คณะบริหารศาสตร์',
+    'liberal_arts': 'คณะศิลปศาสตร์',
+    'agriculture': 'คณะเกษตรศาสตร์',
+    'nursing': 'คณะพยาบาลศาสตร์',
+    'pharmacy': 'คณะเภสัชศาสตร์',
+    'law': 'คณะนิติศาสตร์',
+    'political': 'คณะรัฐศาสตร์',
+    'other': 'อื่นๆ'
+  }
+  return facultyMap[faculty] || '-'
+}
+
+// ⭐ ฟังก์ชันแปลงวันเกิด
+const formatBirthdate = (birthdate) => {
+  if (!birthdate) return '-'
+  
+  try {
+    const date = new Date(birthdate)
+    return date.toLocaleDateString('th-TH', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    })
+  } catch {
+    return birthdate
+  }
 }
 
 // ⭐ อัปโหลดรูปโปรไฟล์

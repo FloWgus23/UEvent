@@ -133,6 +133,9 @@ class ActivitySerializer(serializers.ModelSerializer):
     # 🆕 เพิ่ม tag_list
     tag_list = TagSerializer(many=True, read_only=True)
     
+    # 🆕 เพิ่ม owner_id เพื่อให้ Frontend เช็คได้
+    owner_id = serializers.IntegerField(source='owner.id', read_only=True, allow_null=True)
+    
     class Meta:
         model = Activity
         fields = [
@@ -140,9 +143,9 @@ class ActivitySerializer(serializers.ModelSerializer):
             'time_display', 'capacity', 'location', 'organizer', 'tags', 
             'tag_list',  # 🆕 เพิ่ม
             'category', 'image', 'registered_count', 'status', 
-            'registration_status', 'created_at', 'updated_at'
+            'registration_status', 'owner_id', 'created_at', 'updated_at'  # 🆕 เพิ่ม owner_id
         ]
-        read_only_fields = ['id', 'created_at', 'updated_at', 'registered_count', 'status']
+        read_only_fields = ['id', 'created_at', 'updated_at', 'registered_count', 'status', 'owner_id']
     
     def get_image(self, obj):
         if obj.image:

@@ -71,8 +71,11 @@
               alt="Activity"
             />
             <div class="absolute top-4 left-4">
-               <span :class="['px-3 py-1.5 rounded-lg text-xs font-bold shadow-sm backdrop-blur-md border border-white/20 uppercase tracking-wide', getStatusColor(registration.activity.status)]">
-                  {{ registration.activity.status }}
+               <span :class="['px-3 py-1.5 rounded-lg text-xs font-bold shadow-sm backdrop-blur-md border border-white/20 uppercase tracking-wide', getStatusColor(getRealTimeStatus(registration.activity))]">
+                  <i v-if="getRealTimeStatus(registration.activity) === 'กำลังดำเนินการ'" class="fa-solid fa-play-circle animate-pulse mr-1"></i>
+                  <i v-else-if="getRealTimeStatus(registration.activity) === 'สิ้นสุดแล้ว'" class="fa-solid fa-flag-checkered mr-1"></i>
+                  <i v-else class="fa-solid fa-ticket mr-1"></i>
+                  {{ getRealTimeStatus(registration.activity) }}
                </span>
             </div>
           </div>
@@ -110,12 +113,13 @@
               
               <div class="flex gap-3 w-full sm:w-auto">
                 <button
-                  v-if="registration.status === 'registered'"
+                  v-if="registration.status === 'registered' && getRealTimeStatus(registration.activity) === 'กำลังรับสมัคร'"
                   @click="confirmCancel(registration.id)"
                   class="flex-1 sm:flex-none px-5 py-2.5 bg-white border border-red-200 text-red-600 rounded-xl hover:bg-red-50 hover:border-red-300 transition text-sm font-medium"
                 >
                   ยกเลิก
                 </button>
+                
                 <router-link
                   :to="`/activity/${registration.activity.id}`"
                   class="flex-1 sm:flex-none px-6 py-2.5 bg-[#1E3A8A] text-white rounded-xl hover:bg-[#1E40AF] transition text-sm font-medium shadow-md hover:shadow-lg flex items-center justify-center gap-2"
@@ -151,17 +155,59 @@ const tabs = [
   { label: 'สิ้นสุดแล้ว', value: 'สิ้นสุดแล้ว' }
 ]
 
-// Computed
-const filteredActivities = computed(() => {
-  if (currentTab.value === 'all') {
-    return registrations.value
+// ⭐ ฟังก์ชันคำนวณสถานะตามเวลาจริง (Real-time Status Logic)
+const getRealTimeStatus = (activity) => {
+  if (!activity) return 'กำลังรับสมัคร'
+  if (activity.status === 'สิ้นสุดแล้ว') return 'สิ้นสุดแล้ว' // ยึดตาม DB ถ้าแอดมินปิด
+  
+  if (!activity.date) return 'กำลังรับสมัคร'
+
+  const now = new Date()
+  const date = new Date(activity.date)
+  
+  // เวลาเริ่ม
+  const startDateTime = new Date(date)
+  if (activity.start_time) {
+      const [sh, sm] = activity.start_time.split(':')
+      startDateTime.setHours(parseInt(sh), parseInt(sm), 0)
+  } else {
+      startDateTime.setHours(0, 0, 0)
   }
-  return registrations.value.filter(r => r.activity.status === currentTab.value)
+
+  // เวลาสิ้นสุด
+  const endDateTime = new Date(date)
+  if (activity.end_time) {
+      const [eh, em] = activity.end_time.split(':')
+      endDateTime.setHours(parseInt(eh), parseInt(em), 59)
+  } else {
+      endDateTime.setHours(23, 59, 59)
+  }
+
+  // Logic เปรียบเทียบเวลา
+  if (now > endDateTime) return 'สิ้นสุดแล้ว'
+  if (now >= startDateTime && now <= endDateTime) return 'กำลังดำเนินการ'
+  return 'กำลังรับสมัคร'
+}
+
+// Computed: Filter Activities
+const filteredActivities = computed(() => {
+  let result = registrations.value
+  
+  // เรียงลำดับ: ใหม่สุดขึ้นก่อน (Optional)
+  result.sort((a, b) => new Date(b.registered_at) - new Date(a.registered_at))
+
+  if (currentTab.value === 'all') {
+    return result
+  }
+  
+  // กรองโดยใช้สถานะ Real-time
+  return result.filter(r => getRealTimeStatus(r.activity) === currentTab.value)
 })
 
 const getTabCount = (tab) => {
   if (tab === 'all') return registrations.value.length
-  return registrations.value.filter(r => r.activity.status === tab).length
+  // นับจำนวนโดยใช้สถานะ Real-time
+  return registrations.value.filter(r => getRealTimeStatus(r.activity) === tab).length
 }
 
 // Functions
@@ -205,11 +251,12 @@ const formatDateTime = (dateString) => {
   return date.toLocaleDateString('th-TH', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
 }
 
+// ⭐ กำหนดสีป้ายสถานะ (ใช้สีสดใสตามที่ต้องการ)
 const getStatusColor = (status) => {
   const colors = {
-    'กำลังรับสมัคร': 'bg-green-500/10 text-green-700 border-green-200',
-    'กำลังดำเนินการ': 'bg-blue-500/10 text-blue-700 border-blue-200',
-    'สิ้นสุดแล้ว': 'bg-gray-500/10 text-gray-700 border-gray-200'
+    'กำลังรับสมัคร': 'bg-green-50 text-green-700 border-green-200', // สีเขียว
+    'กำลังดำเนินการ': 'bg-blue-50 text-blue-700 border-blue-200',   // สีฟ้า (ใหม่!)
+    'สิ้นสุดแล้ว': 'bg-red-50 text-red-600 border-red-200'           // สีแดง/ส้ม (ตามที่ขอ ไม่ใช่สีเทา)
   }
   return colors[status] || 'bg-gray-100 text-gray-700'
 }

@@ -81,7 +81,7 @@
               <input v-model="formData.location" type="text" placeholder="เช่น หอประชุมใหญ่" class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg" required />
             </div>
             <div>
-              <label class="block text-gray-700 font-semibold mb-2">หน่วยงานผู้จัด <span class="text-red-500">*</span></label>
+              <label class="block text-gray-700 font-semibold mb-2">ผู้จัด <span class="text-red-500">*</span></label>
               <input v-model="formData.organizer" type="text" placeholder="เช่น สโมสรนักศึกษา..." class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg" required />
             </div>
           </div>

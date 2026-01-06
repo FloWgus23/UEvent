@@ -28,6 +28,45 @@ from .serializers import (
 # 🔧 UTILITY FUNCTIONS
 # ========================================
 
+def update_activity_status_by_time(activity):
+    """
+    อัพเดทสถานะกิจกรรมตามเวลาจริง
+    - ก่อนเวลาเริ่ม → กำลังรับสมัคร
+    - ระหว่างเวลา → กำลังดำเนินการ
+    - หลังเวลาจบ → สิ้นสุดแล้ว
+    """
+    now = timezone.now()
+    activity_date = activity.date
+    
+    # ถ้าไม่มีวันที่ ให้เป็น "กำลังรับสมัคร"
+    if not activity_date:
+        if activity.status != 'กำลังรับสมัคร':
+            activity.status = 'กำลังรับสมัคร'
+            activity.save(update_fields=['status'])
+        return
+    
+    # สร้าง datetime สำหรับเช็ค
+    start_datetime = datetime.datetime.combine(activity_date, activity.start_time or datetime.time(0, 0))
+    end_datetime = datetime.datetime.combine(activity_date, activity.end_time or datetime.time(23, 59))
+    
+    # แปลงเป็น timezone-aware
+    start_datetime = timezone.make_aware(start_datetime)
+    end_datetime = timezone.make_aware(end_datetime)
+    
+    # กำหนดสถานะตามเวลา
+    if now > end_datetime:
+        new_status = 'สิ้นสุดแล้ว'
+    elif now >= start_datetime:
+        new_status = 'กำลังดำเนินการ'
+    else:
+        new_status = 'กำลังรับสมัคร'
+    
+    # อัพเดทถ้าสถานะเปลี่ยน
+    if activity.status != new_status:
+        activity.status = new_status
+        activity.save(update_fields=['status'])
+
+
 def update_implicit_score(user, activity, score_delta):
     """
     ฟังก์ชันช่วยสำหรับอัปเดตคะแนนความสนใจแบบ Implicit
@@ -131,6 +170,24 @@ class ActivityViewSet(viewsets.ModelViewSet):
         
         return queryset
     
+    # ⭐ Override list เพื่ออัพเดทสถานะก่อนส่งข้อมูล
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+        
+        # อัพเดทสถานะทุกกิจกรรมก่อนส่ง
+        for activity in queryset:
+            update_activity_status_by_time(activity)
+        
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+    
+    # ⭐ Override retrieve เพื่ออัพเดทสถานะก่อนส่งข้อมูล
+    def retrieve(self, request, *args, **kwargs):
+        instance = self.get_object()
+        update_activity_status_by_time(instance)
+        serializer = self.get_serializer(instance)
+        return Response(serializer.data)
+    
     # ⭐ Override create เพื่อบันทึก owner
     def perform_create(self, serializer):
         serializer.save(owner=self.request.user)
@@ -143,6 +200,14 @@ class ActivityViewSet(viewsets.ModelViewSet):
     def register(self, request, pk=None):
         """ลงทะเบียนเข้าร่วมกิจกรรม"""
         activity = self.get_object()
+        
+        # ========================================================
+        # ⭐ เช็คว่าผู้ใช้เป็นเจ้าของกิจกรรมหรือไม่
+        # ========================================================
+        if activity.owner == request.user:
+            return Response({
+                'error': 'คุณเป็นผู้จัดกิจกรรมนี้ ไม่สามารถลงทะเบียนเข้าร่วมได้'
+            }, status=status.HTTP_400_BAD_REQUEST)
         
         # ========================================================
         # ⭐ ส่วนที่เพิ่มใหม่: เช็คว่ากิจกรรมจบหรือยัง?
@@ -245,6 +310,11 @@ class ActivityViewSet(viewsets.ModelViewSet):
         สำหรับหน้า Organizer Dashboard
         """
         activities = Activity.objects.filter(owner=request.user).prefetch_related('tag_list').order_by('-created_at')
+        
+        # ⭐ อัพเดทสถานะทุกกิจกรรมก่อนส่ง
+        for activity in activities:
+            update_activity_status_by_time(activity)
+        
         serializer = ActivitySerializer(activities, many=True, context={'request': request})
         return Response(serializer.data)
 

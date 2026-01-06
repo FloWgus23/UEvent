@@ -6,8 +6,9 @@ from .models import UserProfile
 @admin.register(UserProfile)
 class UserProfileAdmin(admin.ModelAdmin):
     # ⭐ เพิ่ม faculty, gender, birthdate ใน list_display
-    list_display = ['user', 'phone', 'faculty', 'gender', 'organizer_status', 'verification_link', 'created_at']
-    list_filter = ['organizer_status', 'faculty', 'gender'] # เพิ่มตัวกรอง
+    list_display = ['user', 'phone', 'faculty', 'gender', 'birthdate', 'organizer_status', 'verification_link', 'created_at']
+    # ⭐ เพิ่มตัวกรอง
+    list_filter = ['organizer_status', 'faculty', 'gender'] 
     list_editable = ['organizer_status']
     search_fields = ['user__username', 'user__first_name', 'phone']
 

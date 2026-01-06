@@ -64,12 +64,6 @@
               <p class="text-gray-500 mt-1">สถิติและข้อมูลสำคัญสำหรับผู้จัดงาน</p>
             </div>
             <div class="flex gap-3">
-               <button class="px-4 py-2 bg-indigo-50 text-indigo-600 border border-indigo-100 rounded-xl hover:bg-indigo-100 transition text-sm font-bold flex items-center gap-2 shadow-sm">
-                 <i class="fa-solid fa-qrcode"></i> สแกน Check-in
-               </button>
-               <button class="px-4 py-2 bg-green-50 text-green-600 border border-green-100 rounded-xl hover:bg-green-100 transition text-sm font-bold flex items-center gap-2 shadow-sm">
-                 <i class="fa-solid fa-file-excel"></i> Export รายชื่อ
-               </button>
             </div>
           </div>
 
