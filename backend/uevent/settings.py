@@ -155,23 +155,54 @@ MEDIA_ROOT = BASE_DIR / 'media'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# CORS Settings
+# ==================== CORS และ CSRF Settings ====================
+
+# CSRF Trusted Origins - ⭐ เพิ่มส่วนนี้
+CSRF_TRUSTED_ORIGINS = [
+    "https://u-event.vercel.app",
+    "https://uevent-production.up.railway.app",
+]
+
+# CORS Settings - ⭐ แก้ไขส่วนนี้
 if DEBUG:
     CORS_ALLOWED_ORIGINS = [
         "http://localhost:5173",
         "http://127.0.0.1:5173",
     ]
 else:
-    # สำหรับ Production - อนุญาต Railway domains
-    cors_origins = os.environ.get('CORS_ALLOWED_ORIGINS', '')
-    if cors_origins:
-        CORS_ALLOWED_ORIGINS = cors_origins.split(',')
-    else:
-        CORS_ALLOW_ALL_ORIGINS = True  # หรือระบุ frontend URL
+    # สำหรับ Production - กำหนด URL ชัดเจน
+    CORS_ALLOWED_ORIGINS = [
+        "https://u-event.vercel.app",
+        "https://uevent-production.up.railway.app",
+    ]
 
 CORS_ALLOW_CREDENTIALS = True
 
-# REST Framework Settings
+# ⭐ เพิ่ม CORS Headers ที่อนุญาต
+CORS_ALLOW_HEADERS = [
+    'accept',
+    'accept-encoding',
+    'authorization',
+    'content-type',
+    'dnt',
+    'origin',
+    'user-agent',
+    'x-csrftoken',
+    'x-requested-with',
+]
+
+# ⭐ เพิ่ม CORS Methods ที่อนุญาต
+CORS_ALLOW_METHODS = [
+    'DELETE',
+    'GET',
+    'OPTIONS',
+    'PATCH',
+    'POST',
+    'PUT',
+]
+
+# ==================== REST Framework Settings ====================
+
 REST_FRAMEWORK = {
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 10,
@@ -189,7 +220,8 @@ REST_FRAMEWORK = {
     )
 }
 
-# Email Backend Settings
+# ==================== Email Backend Settings ====================
+
 if DEBUG:
     EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 else:
@@ -201,7 +233,8 @@ else:
     EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', '')
     EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
 
-# Security Settings for Production
+# ==================== Security Settings for Production ====================
+
 if not DEBUG:
     SECURE_SSL_REDIRECT = True
     SESSION_COOKIE_SECURE = True
