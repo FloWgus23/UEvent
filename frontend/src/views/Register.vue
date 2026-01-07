@@ -217,7 +217,8 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
-import axios from 'axios'
+// import axios from 'axios'  <-- เอาออก
+import api from '../services/api' // <-- ✅ เปลี่ยนมาใช้ตัวนี้แทน (ตรวจสอบว่าไฟล์ api.js อยู่ที่ src/services/api.js นะครับ)
 
 const router = useRouter()
 const isLoading = ref(false)
@@ -267,11 +268,11 @@ const handleRegister = async () => {
   try {
     isLoading.value = true
 
-    // ⭐ 1. แยกชื่อ-นามสกุล
+    // แยกชื่อ-นามสกุล
     const fullNameString = formData.value.fullname.trim()
-    const nameParts = fullNameString.split(' ') // แยกด้วยช่องว่าง
+    const nameParts = fullNameString.split(' ')
     const firstName = nameParts[0]
-    const lastName = nameParts.slice(1).join(' ') // เอาคำที่เหลือมาต่อกันเป็นนามสกุล
+    const lastName = nameParts.slice(1).join(' ')
 
     // Format วันเกิด
     const year = parseInt(formData.value.birthYear) - 543
@@ -283,8 +284,8 @@ const handleRegister = async () => {
       username: formData.value.username,
       email: formData.value.email,
       password: formData.value.password,
-      first_name: firstName, // ส่งชื่อ
-      last_name: lastName,   // ส่งนามสกุล
+      first_name: firstName,
+      last_name: lastName,
       profile: {
           phone: formData.value.phone,
           gender: formData.value.gender,
@@ -295,7 +296,8 @@ const handleRegister = async () => {
 
     console.log('Sending Register data:', registerData)
 
-    const response = await axios.post('http://127.0.0.1:8000/api/auth/register/', registerData)
+    // ✅ เปลี่ยนเป็น api.post และตัด URL ยาวๆ ออก เหลือแค่ path
+    const response = await api.post('/auth/register/', registerData)
     
     console.log('Registration Success:', response.data)
     alert('ลงทะเบียนสำเร็จ! กรุณาเข้าสู่ระบบ')
