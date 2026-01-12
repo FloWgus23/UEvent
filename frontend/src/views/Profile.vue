@@ -23,7 +23,6 @@
 
         <div class="px-8 pb-8 relative">
           
-          <!-- Profile Image Section -->
           <div class="-mt-16 mb-6 flex justify-between items-end">
             <div class="relative group">
               <div class="w-32 h-32 bg-white rounded-full p-2 shadow-lg">
@@ -36,7 +35,6 @@
                   />
                   <i v-else class="fa-solid fa-user"></i>
                   
-                  <!-- Upload Overlay -->
                   <label class="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
                     <i class="fa-solid fa-camera text-white text-2xl"></i>
                     <input 
@@ -49,7 +47,6 @@
                 </div>
               </div>
               
-              <!-- Delete Image Button -->
               <button 
                 v-if="user.profile?.profile_image"
                 @click="handleDeleteImage"
@@ -131,7 +128,6 @@
               </div>
             </div>
 
-            <!-- ⭐ เพิ่มส่วนนี้: แสดง เพศ -->
             <div class="space-y-1">
               <label class="text-sm text-gray-500">เพศ</label>
               <div class="font-medium text-gray-900 bg-gray-50 px-4 py-3 rounded-xl border border-gray-100">
@@ -139,7 +135,6 @@
               </div>
             </div>
 
-            <!-- ⭐ เพิ่มส่วนนี้: แสดง คณะ -->
             <div class="space-y-1">
               <label class="text-sm text-gray-500">คณะ</label>
               <div class="font-medium text-gray-900 bg-gray-50 px-4 py-3 rounded-xl border border-gray-100">
@@ -147,7 +142,6 @@
               </div>
             </div>
 
-            <!-- ⭐ เพิ่มส่วนนี้: แสดง วันเกิด -->
             <div class="space-y-1">
               <label class="text-sm text-gray-500">วันเกิด</label>
               <div class="font-medium text-gray-900 bg-gray-50 px-4 py-3 rounded-xl border border-gray-100">
@@ -163,7 +157,6 @@
       </div>
     </div>
 
-    <!-- Edit Modal -->
     <div v-if="showEditModal" class="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" @click="showEditModal = false"></div>
 
@@ -217,7 +210,6 @@
               >
             </div>
 
-            <!-- ⭐ เพิ่มส่วนนี้: เพศ -->
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">เพศ</label>
               <select 
@@ -231,7 +223,6 @@
               </select>
             </div>
 
-            <!-- ⭐ เพิ่มส่วนนี้: คณะ -->
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">คณะ</label>
               <select 
@@ -252,7 +243,6 @@
               </select>
             </div>
 
-            <!-- ⭐ เพิ่มส่วนนี้: วันเกิด -->
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">วันเกิด</label>
               <input 
@@ -293,6 +283,7 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import authService from '@/services/authService'
 import apiClient from '@/services/api'
+import Swal from 'sweetalert2'
 
 const router = useRouter()
 const user = ref({})
@@ -310,12 +301,45 @@ const editForm = ref({
   birthdate: ''
 })
 
+// ⭐⭐⭐ Helper: สร้าง Custom Alert สวยๆ แบบ Center Modal ⭐⭐⭐
+const showSuccessAlert = (title, text) => {
+  return Swal.fire({
+    icon: 'success',
+    title: title,
+    text: text,
+    showConfirmButton: false, // ไม่ต้องกด OK
+    timer: 2000, // หายไปเองใน 2 วินาที
+    timerProgressBar: true,
+    buttonsStyling: false, // ปิด Style เดิม
+    customClass: {
+      popup: 'rounded-3xl shadow-2xl border border-gray-100 p-6',
+      title: 'text-xl font-bold text-gray-800 mt-4',
+      htmlContainer: 'text-gray-500',
+      timerProgressBar: 'bg-green-500 rounded-b-3xl h-1.5'
+    }
+  })
+}
+
+const showErrorAlert = (title, text) => {
+  return Swal.fire({
+    icon: 'error',
+    title: title,
+    text: text,
+    buttonsStyling: false,
+    confirmButtonText: 'ปิดหน้าต่าง',
+    customClass: {
+      popup: 'rounded-3xl shadow-2xl p-6',
+      confirmButton: 'bg-red-500 hover:bg-red-600 text-white font-bold py-2.5 px-6 rounded-xl mt-4 transition-all hover:scale-105 shadow-md',
+      title: 'text-xl font-bold text-gray-800',
+      htmlContainer: 'text-gray-500'
+    }
+  })
+}
+
 const fetchUserProfile = async () => {
   try {
     const res = await authService.getUserProfile()
     user.value = res.data
-    
-    console.log('User data:', user.value) // ⭐ Debug ดูข้อมูลที่ได้
     
     // Set edit form
     editForm.value = {
@@ -330,9 +354,10 @@ const fetchUserProfile = async () => {
   } catch (err) {
     console.error(err)
     if (err.response && err.response.status === 401) {
-      alert('Session หมดอายุ กรุณาเข้าสู่ระบบใหม่')
-      localStorage.removeItem('access')
-      router.push('/login')
+      showErrorAlert('Session หมดอายุ', 'กรุณาเข้าสู่ระบบใหม่').then(() => {
+          localStorage.removeItem('access')
+          router.push('/login')
+      })
     }
   } finally {
     isLoading.value = false
@@ -341,22 +366,9 @@ const fetchUserProfile = async () => {
 
 // ⭐ ฟังก์ชันแสดงชื่อ
 const getDisplayName = () => {
-  // ถ้ามี fullname จาก API ใหม่
-  if (user.value.fullname) {
-    return user.value.fullname
-  }
-  
-  // ถ้ามี first_name + last_name
-  if (user.value.first_name && user.value.last_name) {
-    return `${user.value.first_name} ${user.value.last_name}`
-  }
-  
-  // ถ้ามีแค่ first_name
-  if (user.value.first_name) {
-    return user.value.first_name
-  }
-  
-  // ถ้าไม่มีอะไรเลย ให้ใช้ username
+  if (user.value.fullname) return user.value.fullname
+  if (user.value.first_name && user.value.last_name) return `${user.value.first_name} ${user.value.last_name}`
+  if (user.value.first_name) return user.value.first_name
   return user.value.username || 'ไม่ระบุชื่อ'
 }
 
@@ -390,7 +402,6 @@ const getFacultyDisplay = (faculty) => {
 // ⭐ ฟังก์ชันแปลงวันเกิด
 const formatBirthdate = (birthdate) => {
   if (!birthdate) return '-'
-  
   try {
     const date = new Date(birthdate)
     return date.toLocaleDateString('th-TH', {
@@ -410,13 +421,33 @@ const handleImageUpload = async (event) => {
 
   // ตรวจสอบประเภทไฟล์
   if (!file.type.startsWith('image/')) {
-    alert('กรุณาเลือกไฟล์รูปภาพเท่านั้น')
+    Swal.fire({
+        icon: 'warning',
+        title: 'ไฟล์ไม่ถูกต้อง',
+        text: 'กรุณาเลือกไฟล์รูปภาพเท่านั้น',
+        buttonsStyling: false,
+        confirmButtonText: 'ตกลง',
+        customClass: {
+            popup: 'rounded-3xl p-6',
+            confirmButton: 'bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-6 rounded-xl mt-4 shadow-md'
+        }
+    })
     return
   }
 
   // ตรวจสอบขนาดไฟล์ (ไม่เกิน 5MB)
   if (file.size > 5 * 1024 * 1024) {
-    alert('ขนาดไฟล์ต้องไม่เกิน 5MB')
+    Swal.fire({
+        icon: 'warning',
+        title: 'ไฟล์ใหญ่เกินไป',
+        text: 'ขนาดไฟล์ต้องไม่เกิน 5MB',
+        buttonsStyling: false,
+        confirmButtonText: 'ตกลง',
+        customClass: {
+            popup: 'rounded-3xl p-6',
+            confirmButton: 'bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-6 rounded-xl mt-4 shadow-md'
+        }
+    })
     return
   }
 
@@ -431,24 +462,48 @@ const handleImageUpload = async (event) => {
     })
 
     user.value = res.data.data
-    alert('✅ อัปโหลดรูปโปรไฟล์สำเร็จ')
+    
+    // ⭐ ใช้ Alert สวยๆ ตรงกลาง
+    showSuccessAlert('อัปโหลดสำเร็จ!', 'รูปโปรไฟล์ของคุณถูกเปลี่ยนเรียบร้อยแล้ว')
+
   } catch (err) {
     console.error(err)
-    alert('❌ ไม่สามารถอัปโหลดรูปภาพได้')
+    showErrorAlert('เกิดข้อผิดพลาด', 'ไม่สามารถอัปโหลดรูปภาพได้')
   }
 }
 
 // ⭐ ลบรูปโปรไฟล์
 const handleDeleteImage = async () => {
-  if (!confirm('คุณต้องการลบรูปโปรไฟล์หรือไม่?')) return
+  // ⭐ Confirmation Dialog แบบสวยๆ ใช้ Tailwind
+  const result = await Swal.fire({
+      title: 'ยืนยันการลบ?',
+      text: "คุณแน่ใจหรือไม่ที่จะลบรูปโปรไฟล์นี้?",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'ใช่, ลบเลย',
+      cancelButtonText: 'ยกเลิก',
+      buttonsStyling: false, // ปิด Style เดิมเพื่อใช้ Tailwind เต็มรูปแบบ
+      customClass: {
+          popup: 'rounded-3xl shadow-2xl p-6',
+          title: 'text-xl font-bold text-gray-800',
+          htmlContainer: 'text-gray-500 mb-4',
+          confirmButton: 'bg-red-500 hover:bg-red-600 text-white font-bold py-2.5 px-6 rounded-xl shadow-lg transform transition hover:scale-105 mx-2',
+          cancelButton: 'bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold py-2.5 px-6 rounded-xl shadow-sm transform transition hover:scale-105 mx-2'
+      }
+  })
+
+  if (!result.isConfirmed) return
 
   try {
     const res = await apiClient.delete('/auth/me/delete-image/')
     user.value = res.data.data
-    alert('✅ ลบรูปโปรไฟล์สำเร็จ')
+    
+    // ⭐ ใช้ Alert สวยๆ ตรงกลาง
+    showSuccessAlert('ลบเรียบร้อย!', 'รูปโปรไฟล์ถูกลบออกจากระบบแล้ว')
+
   } catch (err) {
     console.error(err)
-    alert('❌ ไม่สามารถลบรูปภาพได้')
+    showErrorAlert('เกิดข้อผิดพลาด', 'ไม่สามารถลบรูปภาพได้')
   }
 }
 
@@ -460,11 +515,14 @@ const handleUpdateProfile = async () => {
     const res = await apiClient.patch('/auth/me/', editForm.value)
     user.value = res.data.data
     
-    alert('✅ อัปเดตข้อมูลสำเร็จ')
-    showEditModal.value = false
+    showEditModal.value = false 
+    
+    // ⭐ ใช้ Alert สวยๆ ตรงกลาง
+    showSuccessAlert('บันทึกสำเร็จ!', 'ข้อมูลโปรไฟล์ของคุณได้รับการอัปเดตแล้ว')
+    
   } catch (err) {
     console.error(err)
-    alert('❌ ไม่สามารถอัปเดตข้อมูลได้')
+    showErrorAlert('บันทึกไม่สำเร็จ', 'เกิดข้อผิดพลาดในการเชื่อมต่อ')
   } finally {
     isSubmitting.value = false
   }
