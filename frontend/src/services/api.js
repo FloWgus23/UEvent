@@ -1,26 +1,7 @@
 // frontend/src/services/api.js
 import axios from "axios";
 
-// ⭐ ตรวจจับสภาพแวดล้อมอัตโนมัติ
-const getApiBaseUrl = () => {
-  // ถ้ากำหนด VITE_API_URL ไว้ใน .env → ใช้ค่านั้น (สำหรับ Override)
-  if (import.meta.env.VITE_API_URL) {
-    return import.meta.env.VITE_API_URL;
-  }
-
-  // ตรวจสอบว่ากำลังรันบน Production (Vercel) หรือไม่
-  const hostname = window.location.hostname;
-  
-  if (hostname === "localhost" || hostname === "127.0.0.1") {
-    // Development: ใช้ Backend Local
-    return "http://127.0.0.1:8000";
-  } else {
-    // Production: ใช้ Backend บน Railway
-    return "https://uevent-production.up.railway.app";
-  }
-};
-
-const API_BASE_URL = getApiBaseUrl() + "/api";
+const API_BASE_URL = (import.meta.env.VITE_API_URL || "http://localhost:8000") + "/api";
 
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
@@ -80,8 +61,5 @@ apiClient.interceptors.response.use(
     return Promise.reject(error);
   }
 );
-
-// ⭐ แสดง API URL ที่ใช้งาน (สำหรับ Debug)
-console.log(`🔗 API Base URL: ${API_BASE_URL}`);
 
 export default apiClient;
