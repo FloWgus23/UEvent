@@ -8,7 +8,7 @@ from django.core.validators import MinValueValidator, MaxValueValidator
 # ========================================
 # 🆕 TAG SYSTEM MODELS
 # ========================================
-
+# เก็บ tag กลางทั้งหมด 
 class Tag(models.Model):
     """
     Tags สำหรับระบบ Recommendation
@@ -57,7 +57,7 @@ class Tag(models.Model):
     def __str__(self):
         return f"{self.icon} {self.name}" if self.icon else self.name
 
-
+#ความสนใจของผู้ใช้งาน 
 class UserInterest(models.Model):
     """
     ความสนใจของผู้ใช้แต่ละคน
@@ -77,6 +77,7 @@ class UserInterest(models.Model):
         verbose_name="แท็ก"
     )
     
+    #คะแนนที่เลือกเองตอนสมัครใหม่
     explicit_score = models.DecimalField(
         max_digits=5,
         decimal_places=2,
@@ -86,6 +87,7 @@ class UserInterest(models.Model):
         verbose_name="คะแนนแบบตรง"
     )
     
+    #คะแนนที่แอบเก็บความสนใจ เช่น การดูกิจกรรม ลงทะเบียน และยกเลิกกิจกรรม
     implicit_score = models.DecimalField(
         max_digits=5,
         decimal_places=2,
@@ -109,11 +111,11 @@ class UserInterest(models.Model):
         return f"{self.user.username} - {self.tag.name} (E:{self.explicit_score}, I:{self.implicit_score})"
     
     @property
-    def total_score(self):
+    def total_score(self): #สูตรที่ใช้คำนวณคะแนนรวมครับ
         """คำนวณคะแนนรวม (70% explicit + 30% implicit)"""
         return (0.7 * float(self.explicit_score)) + (0.3 * float(self.implicit_score))
 
-
+#กิจกรรมกับการเลือก tag ได้แบบ Many-to-many
 class ActivityTag(models.Model):
     """
     Many-to-Many ระหว่าง Activity กับ Tag
@@ -134,7 +136,7 @@ class ActivityTag(models.Model):
     
     class Meta:
         db_table = 'activity_tag'
-        unique_together = ('activity', 'tag')
+        unique_together = ('activity', 'tag')    # ป้องกันการแปะ Tag เดิมซ้ำในกิจกรรมเดียว
         verbose_name = 'แท็กของกิจกรรม'
         verbose_name_plural = 'แท็กของกิจกรรม'
     
@@ -146,7 +148,8 @@ class ActivityTag(models.Model):
 # EXISTING MODELS
 # ========================================
 
-class Activity(models.Model):
+#กิจกรรมทั้งหมด รายละเอียดกิจกรรม ใครเป็นคนสร้าง, จัดที่ไหน, เมื่อไหร่, รับกี่คน
+class Activity(models.Model):   
     # สถานะของกิจกรรม
     STATUS_CHOICES = [
         ('กำลังรับสมัคร', 'กำลังรับสมัคร'),
@@ -236,7 +239,7 @@ class Activity(models.Model):
             return f"{self.start_time.strftime('%H:%M')} - {self.end_time.strftime('%H:%M')}"
         return None
 
-
+#เก็บการลงทะเบียนของ User คนไหน -> สมัครกิจกรรมอะไร -> เมื่อไหร่
 class Registration(models.Model):
     """การลงทะเบียนกิจกรรม"""
     user = models.ForeignKey(
