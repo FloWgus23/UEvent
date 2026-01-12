@@ -219,6 +219,8 @@ import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import axios from 'axios'
 import Swal from 'sweetalert2'
+import apiClient from '@/services/api'
+
 
 const router = useRouter()
 const isLoading = ref(false)
@@ -332,7 +334,7 @@ const handleRegister = async () => {
       }
     }
 
-    await axios.post('http://127.0.0.1:8000/api/auth/register/', registerData)
+    await apiClient.post('/auth/register/', registerData)
     
     // ⭐⭐⭐ Alert สำเร็จแบบสวยงาม (Premium Look) ⭐⭐⭐
     await Swal.fire({
