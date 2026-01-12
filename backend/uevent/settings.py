@@ -8,11 +8,12 @@ import dj_database_url
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+
+# Quick-start development settings - unsuitable for production
+# See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
+
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.environ.get(
-    'SECRET_KEY',
-    'django-insecure-o+%rww)m56b*!v9cisbm#^g3tx2-+n!lzuz4tmdkm=e@r00wg%'
-)
+SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-o+%rww)m56b*!v9cisbm#^g3tx2-+n!lzuz4tmdkm=e@r00wg%')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get('DEBUG', 'True') == 'True'
@@ -24,9 +25,8 @@ ALLOWED_HOSTS = ['*'] if DEBUG else os.environ.get('ALLOWED_HOSTS', '').split(',
 if os.environ.get('RAILWAY_ENVIRONMENT'):
     ALLOWED_HOSTS.append('.railway.app')
 
-# =========================
+
 # Application definition
-# =========================
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -37,11 +37,11 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'django_filters',
     'django_rest_passwordreset',
-
+    
     # Third-party apps
     'rest_framework',
     'corsheaders',
-
+    
     # Local apps
     'users',
     'activities',
@@ -52,7 +52,7 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',  # สำหรับ serve static files
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -81,10 +81,11 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'uevent.wsgi.application'
 
-# =========================
-# Database
-# =========================
 
+# Database
+# https://docs.djangoproject.com/en/5.2/ref/settings/#databases
+
+# ใช้ PostgreSQL จาก Railway ถ้ามี DATABASE_URL
 if os.environ.get('DATABASE_URL'):
     DATABASES = {
         'default': dj_database_url.config(
@@ -94,6 +95,7 @@ if os.environ.get('DATABASE_URL'):
         )
     }
 else:
+    # ใช้ Local PostgreSQL สำหรับ Development
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.postgresql',
@@ -105,90 +107,71 @@ else:
         }
     }
 
-# =========================
+
 # Password validation
-# =========================
+# https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
 
 AUTH_PASSWORD_VALIDATORS = [
-    {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
-    {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator'},
-    {'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator'},
-    {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
+    {
+        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
+    },
+    {
+        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+    },
+    {
+        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
+    },
+    {
+        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
+    },
 ]
 
-# =========================
+
 # Internationalization
-# =========================
+# https://docs.djangoproject.com/en/5.2/topics/i18n/
 
 LANGUAGE_CODE = 'th-th'
 TIME_ZONE = 'Asia/Bangkok'
+
 USE_I18N = True
 USE_TZ = True
 
-# =========================
-# Static / Media
-# =========================
+
+# Static files (CSS, JavaScript, Images)
+# https://docs.djangoproject.com/en/5.2/howto/static-files/
 
 STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
+
+# Whitenoise configuration
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
+# Media Files
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
+# Default primary key field type
+# https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
+
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# =========================
-# CORS SETTINGS
-# =========================
-
+# CORS Settings
 if DEBUG:
     CORS_ALLOWED_ORIGINS = [
         "http://localhost:5173",
         "http://127.0.0.1:5173",
     ]
 else:
+    # สำหรับ Production - อนุญาต Railway domains
     cors_origins = os.environ.get('CORS_ALLOWED_ORIGINS', '')
     if cors_origins:
         CORS_ALLOWED_ORIGINS = cors_origins.split(',')
     else:
-        CORS_ALLOW_ALL_ORIGINS = True
+        CORS_ALLOW_ALL_ORIGINS = True  # หรือระบุ frontend URL
 
 CORS_ALLOW_CREDENTIALS = True
 
-# ✅ (1) CSRF TRUSTED ORIGINS — จำเป็นสำหรับ Vercel
-CSRF_TRUSTED_ORIGINS = [
-    "https://u-event.vercel.app",
-    "https://*.vercel.app",
-]
-
-# ✅ (2) Allow Headers สำหรับ Preflight
-CORS_ALLOW_HEADERS = [
-    "accept",
-    "accept-encoding",
-    "authorization",
-    "content-type",
-    "dnt",
-    "origin",
-    "user-agent",
-    "x-csrftoken",
-    "x-requested-with",
-]
-
-# ✅ (3) Allow Methods
-CORS_ALLOW_METHODS = [
-    "DELETE",
-    "GET",
-    "OPTIONS",
-    "PATCH",
-    "POST",
-    "PUT",
-]
-
-# =========================
-# REST Framework
-# =========================
-
+# REST Framework Settings
 REST_FRAMEWORK = {
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 10,
@@ -206,13 +189,11 @@ REST_FRAMEWORK = {
     )
 }
 
-# =========================
-# Email
-# =========================
-
+# Email Backend Settings
 if DEBUG:
     EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 else:
+    # ใช้ SMTP จริงใน production
     EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
     EMAIL_HOST = os.environ.get('EMAIL_HOST', 'smtp.gmail.com')
     EMAIL_PORT = int(os.environ.get('EMAIL_PORT', '587'))
@@ -220,10 +201,7 @@ else:
     EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', '')
     EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
 
-# =========================
-# Security (Production)
-# =========================
-
+# Security Settings for Production
 if not DEBUG:
     SECURE_SSL_REDIRECT = True
     SESSION_COOKIE_SECURE = True
