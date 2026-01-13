@@ -1,5 +1,5 @@
-# Use Python 3.12 slim image
-FROM python:3.12-slim
+# Use Python 3.11 slim image
+FROM python:3.11-slim
 
 # Set working directory
 WORKDIR /app
@@ -11,21 +11,25 @@ RUN apt-get update && apt-get install -y \
     gcc \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy requirements file
+# Copy requirements first for better caching
 COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
 
-# Upgrade pip and install Python dependencies
-RUN pip install --upgrade pip && \
-    pip install -r requirements.txt --no-cache-dir
-
-# Copy all project files
+# Copy application code
 COPY . .
 
-# Collect static files
-RUN python manage.py collectstatic --noinput
+# Make start script executable
+RUN chmod +x start.sh
 
-# Expose port (Railway will use $PORT)
+# Collect static files
+RUN python manage.py collectstatic --noinput || echo "Static files collection skipped"
+
+# Expose port (Railway will set $PORT)
 EXPOSE 8000
 
-# Start gunicorn server
-CMD gunicorn uevent.wsgi:application --bind 0.0.0.0:$PORT --workers 4 --log-file - --access-logfile - --error-logfile -
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:${PORT}/health/')" || exit 1
+
+# Run start script
+CMD ["./start.sh"]
