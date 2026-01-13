@@ -3,7 +3,9 @@ Django settings for uevent project.
 """
 import os
 from pathlib import Path
+from django.urls import reverse_lazy
 import dj_database_url
+
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -29,6 +31,8 @@ if os.environ.get('RAILWAY_ENVIRONMENT'):
 # Application definition
 
 INSTALLED_APPS = [
+    "unfold",  # ใส่บรรทัดนี้
+    "unfold.contrib.filters",  # ถ้าอยากได้ตัวกรองสวยๆ
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -209,3 +213,78 @@ if not DEBUG:
     SECURE_BROWSER_XSS_FILTER = True
     SECURE_CONTENT_TYPE_NOSNIFF = True
     X_FRAME_OPTIONS = 'DENY'
+
+
+# settings.py
+
+UNFOLD = {
+    "SITE_TITLE": "UEvent Admin",
+    "SITE_HEADER": "UEvent Management",
+    "SITE_URL": "/",
+    "SIDEBAR": {
+        "show_search": True,
+        "show_all_applications": False,
+        "navigation": [
+            {
+                "title": "การจัดการผู้ใช้",
+                "separator": True,
+                "items": [
+                    {
+                        "title": "โปรไฟล์ผู้ใช้",
+                        "icon": "account_circle",
+                        # 👈 2. ใส่ reverse_lazy() ครอบชื่อลิงก์
+                        "link": reverse_lazy("admin:users_userprofile_changelist"), 
+                    },
+                    {
+                        "title": "บัญชีระบบ (Users)",
+                        "icon": "manage_accounts",
+                        "link": reverse_lazy("admin:auth_user_changelist"),
+                    },
+                    {
+                        "title": "กลุ่มผู้ดูแล (Groups)",
+                        "icon": "groups",
+                        "link": reverse_lazy("admin:auth_group_changelist"),
+                    },
+                ],
+            },
+            {
+                "title": "กิจกรรมและข่าวสาร",
+                "separator": True,
+                "items": [
+                    {
+                        "title": "กิจกรรมทั้งหมด",
+                        "icon": "event_available",
+                        # ⚠️ เช็คชื่อ Model ให้ชัวร์นะครับ (activity หรือ activities)
+                        "link": reverse_lazy("admin:activities_activity_changelist"), 
+                    },
+                    {
+                        "title": "การลงทะเบียน",
+                        "icon": "how_to_reg",
+                        "link": reverse_lazy("admin:activities_registration_changelist"),
+                    },
+                    {
+                        "title": "ข่าวประชาสัมพันธ์",
+                        "icon": "newspaper",
+                        "link": reverse_lazy("admin:news_news_changelist"),
+                    },
+                ],
+            },
+            {
+                "title": "ข้อมูลระบบ",
+                "separator": True,
+                "items": [
+                    {
+                        "title": "แท็ก (Tags)",
+                        "icon": "label",
+                        "link": reverse_lazy("admin:activities_tag_changelist"),
+                    },
+                    {
+                        "title": "ความสนใจ (Interests)",
+                        "icon": "favorite",
+                        "link": reverse_lazy("admin:activities_userinterest_changelist"),
+                    },
+                ],
+            },
+        ],
+    },
+} 

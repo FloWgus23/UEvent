@@ -153,7 +153,6 @@
             <div class="pt-2">
               <template v-if="isLoggedIn">
                 
-                <!-- ⭐ เพิ่ม: แสดงถ้าเป็นผู้จัดกิจกรรม -->
                 <div v-if="isActivityOwner" class="space-y-4 animate-fade-in">
                   <div class="bg-blue-50 border-2 border-blue-200 rounded-2xl p-5 text-center relative overflow-hidden shadow-sm">
                     <div class="absolute -right-4 -top-4 text-blue-100 text-6xl z-0 opacity-50">
@@ -179,7 +178,6 @@
                   </router-link>
                 </div>
 
-                <!-- แสดงถ้าลงทะเบียนแล้ว -->
                 <div v-else-if="isRegistered" class="space-y-4 animate-fade-in">
                   <div class="bg-green-50 border border-green-200 rounded-2xl p-4 text-center relative overflow-hidden shadow-sm">
                     <div class="absolute -right-4 -top-4 text-green-100 text-6xl z-0 opacity-50">
@@ -245,9 +243,9 @@
                     @click="handleRegisterClick"
                     class="w-full py-4 rounded-2xl font-bold text-xl shadow-lg transition-all transform hover:-translate-y-1 active:scale-95 text-white bg-gradient-to-r from-green-500 to-teal-500 hover:from-green-600 hover:to-teal-600 flex items-center justify-center gap-2 relative overflow-hidden group"
                   >
-                     <span class="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300"></span>
-                     <i class="fa-solid fa-ticket text-2xl relative z-10 group-hover:rotate-12 transition-transform"></i>
-                     <span class="relative z-10 tracking-wide">ลงทะเบียนเข้าร่วม</span>
+                      <span class="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300"></span>
+                      <i class="fa-solid fa-ticket text-2xl relative z-10 group-hover:rotate-12 transition-transform"></i>
+                      <span class="relative z-10 tracking-wide">ลงทะเบียนเข้าร่วม</span>
                   </button>
                 </div>
 
@@ -375,6 +373,29 @@
       </div>
     </Transition>
 
+    <Transition name="modal">
+      <div v-if="showSuccessModal" class="fixed inset-0 z-[60] flex items-center justify-center p-4">
+        <div class="absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity" @click="showSuccessModal = false"></div>
+
+        <div class="relative bg-white rounded-[2rem] shadow-2xl w-full max-w-sm overflow-hidden animate-scale-up text-center p-8">
+          
+          <div class="mb-6 relative">
+            <div class="w-24 h-24 bg-green-100 rounded-full mx-auto flex items-center justify-center relative z-10">
+               <i class="fa-solid fa-check text-5xl text-green-500 animate-bounce-small"></i>
+            </div>
+            <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-24 h-24 bg-green-400 rounded-full animate-ping opacity-20"></div>
+          </div>
+
+          <h3 class="text-2xl font-extrabold text-gray-800 mb-2">ลงทะเบียนสำเร็จ!</h3>
+          <p class="text-gray-500 font-medium pb-2"> ระบบได้บันทึกข้อมูลของคุณเรียบร้อยแล้ว<br>เตรียมตัวมาร่วมกิจกรรมได้เลย
+          </p>
+
+          <div class="absolute -top-10 -right-10 w-32 h-32 bg-green-50 rounded-full blur-3xl -z-10"></div>
+          <div class="absolute -bottom-10 -left-10 w-32 h-32 bg-blue-50 rounded-full blur-3xl -z-10"></div>
+        </div>
+      </div>
+    </Transition>
+
   </div>
 </template>
 
@@ -404,12 +425,13 @@ const router = useRouter()
 const activity = ref(null)
 const isLoading = ref(true)
 const isLoggedIn = ref(false)
-const currentUserId = ref(null)  // ⭐ เพิ่ม: เก็บ user id ของผู้ใช้ปัจจุบัน
+const currentUserId = ref(null)
 
 const isRegistered = ref(false)
 const registrationDate = ref(null)
 
 const showModal = ref(false)
+const showSuccessModal = ref(false)
 const isSubmitting = ref(false)
 const userProfile = ref({}) 
 const form = ref({
@@ -417,22 +439,19 @@ const form = ref({
   note: ''
 })
 
-// ⭐ เพิ่ม: Computed เช็คว่าเป็นเจ้าของกิจกรรมหรือไม่
 const isActivityOwner = computed(() => {
   if (!activity.value || !currentUserId.value) return false
   return activity.value.owner_id === currentUserId.value
 })
 
-// Computed: Activity Status Logic (เช็คเวลาจริง)
 const activityStatus = computed(() => {
   if (!activity.value) return 'loading'
   if (activity.value.status === 'สิ้นสุดแล้ว') return 'ended'
-  if (!activity.value.date) return 'upcoming' // ไม่ระบุวัน ถือว่าเปิดตลอด
+  if (!activity.value.date) return 'upcoming'
 
   const now = new Date()
   const date = new Date(activity.value.date)
   
-  // สร้าง DateTime เริ่มต้น
   const startDateTime = new Date(date)
   if (activity.value.start_time) {
       const [sh, sm] = activity.value.start_time.split(':')
@@ -441,7 +460,6 @@ const activityStatus = computed(() => {
       startDateTime.setHours(0, 0, 0)
   }
 
-  // สร้าง DateTime สิ้นสุด
   const endDateTime = new Date(date)
   if (activity.value.end_time) {
       const [eh, em] = activity.value.end_time.split(':')
@@ -450,17 +468,15 @@ const activityStatus = computed(() => {
       endDateTime.setHours(23, 59, 59)
   }
 
-  // เช็คสถานะตามเวลา
   if (now > endDateTime) {
-      return 'ended'           // 🏁 จบแล้ว
+      return 'ended'
   } else if (now >= startDateTime && now <= endDateTime) {
-      return 'ongoing'         // ⚠️ กำลังดำเนินการ
+      return 'ongoing'
   } else {
-      return 'upcoming'        // ✅ ยังไม่ถึงเวลา (เปิดรับสมัคร)
+      return 'upcoming'
   }
 })
 
-// Format Date Functions
 const formatDate = (dateString) => {
   if (!dateString) return '-'
   const date = new Date(dateString)
@@ -547,14 +563,20 @@ const confirmRegistration = async () => {
         note: form.value.note
     })
 
-    alert('✅ ลงทะเบียนสำเร็จเรียบร้อย!')
+    await fetchDetail() 
+    
     showModal.value = false
     
-    await fetchDetail()
+    // ⭐ แสดง Modal และตั้งเวลาปิด
+    showSuccessModal.value = true
+    
+    // ตั้งเวลาปิดอัตโนมัติ 2 วินาที (2000 ms)
+    setTimeout(() => {
+      showSuccessModal.value = false
+    }, 2000)
     
   } catch (err) {
     console.error(err)
-    // ⭐ แก้ไข: ดึง error message จาก backend (รองรับทั้ง error และ message)
     const errorMsg = err.response?.data?.error || err.response?.data?.message || 'เกิดข้อผิดพลาดในการลงทะเบียน'
     alert('❌ ' + errorMsg)
   } finally {
@@ -565,7 +587,6 @@ const confirmRegistration = async () => {
 onMounted(async () => {
   isLoggedIn.value = !!localStorage.getItem('access')
   
-  // ⭐ ถ้า login แล้ว ดึง user id
   if (isLoggedIn.value) {
     try {
       const response = await apiClient.get('/user/profile/')

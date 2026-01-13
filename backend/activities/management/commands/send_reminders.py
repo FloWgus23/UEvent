@@ -5,7 +5,7 @@ from activities.models import Activity, Registration
 from notifications.models import Notification
 
 class Command(BaseCommand):
-    help = 'ส่งการแจ้งเตือนกิจกรรม (ป้องกันการส่งซ้ำ)'
+    help = 'ส่งการแจ้งเตือนกิจกรรมตาม Timeline (ไม่ส่งซ้ำ)'
 
     def handle(self, *args, **kwargs):
         now = timezone.now()
@@ -15,6 +15,7 @@ class Command(BaseCommand):
 
         # ==========================================
         # 1. แจ้งเตือนล่วงหน้า 1 วัน (24 ชั่วโมง)
+        # ส่งเฉพาะผู้ที่ยังไม่เคยได้รับการแจ้งเตือน "พรุ่งนี้แล้ว"
         # ==========================================
         upcoming_activities = Activity.objects.filter(
             date=tomorrow
@@ -23,14 +24,14 @@ class Command(BaseCommand):
         for activity in upcoming_activities:
             regs = Registration.objects.filter(activity=activity)
             for reg in regs:
-                # ⭐ แก้ไข: เช็คจาก Title + วันที่ (ตัด message__contains ออกเพราะทำให้บั๊ก)
-                already_sent_today = Notification.objects.filter(
+                # เช็คว่าเคยส่งการแจ้งเตือน "พรุ่งนี้แล้ว" ให้ user คนนี้สำหรับกิจกรรมนี้หรือยัง
+                # (เช็คตลอดทั้งชีวิต ไม่ใช่แค่วันนี้)
+                already_sent_tomorrow = Notification.objects.filter(
                     recipient=reg.user,
-                    title=f"⏳ พรุ่งนี้แล้ว! กิจกรรม {activity.name}", # เช็คชื่อกิจกรรมในหัวข้อเลย
-                    created_at__date=today # เช็คว่า "วันนี้" ส่งไปหรือยัง
+                    title__contains=f"พรุ่งนี้แล้ว! กิจกรรม {activity.name}"
                 ).exists()
 
-                if not already_sent_today:
+                if not already_sent_tomorrow:
                     Notification.objects.create(
                         recipient=reg.user,
                         title=f"⏳ พรุ่งนี้แล้ว! กิจกรรม {activity.name}",
@@ -38,10 +39,11 @@ class Command(BaseCommand):
                         notification_type='warning'
                     )
                     count += 1
-                    self.stdout.write(f"   -> ส่งเตือนล่วงหน้าให้ {reg.user.username}")
+                    self.stdout.write(f"   -> ส่งเตือนล่วงหน้าให้ {reg.user.username} (กิจกรรม: {activity.name})")
 
         # ==========================================
         # 2. แจ้งเตือนด่วน (ก่อนเริ่ม 30 นาที)
+        # ส่งเฉพาะผู้ที่ยังไม่เคยได้รับการแจ้งเตือน "อีก 30 นาที"
         # ==========================================
         today_activities = Activity.objects.filter(
             date=today
@@ -58,15 +60,15 @@ class Command(BaseCommand):
             
             time_diff = activity_datetime - now
 
-            # ถ้าเหลือเวลา 0 - 30 นาที
-            if timedelta(minutes=0) < time_diff <= timedelta(minutes=30):
+            # ส่งเฉพาะเมื่อเหลือเวลา 25-35 นาที (ช่วง 10 นาที)
+            if timedelta(minutes=25) <= time_diff <= timedelta(minutes=35):
                 regs = Registration.objects.filter(activity=activity)
                 for reg in regs:
-                    # ⭐ แก้ไข: เช็คแบบเดียวกัน
+                    # เช็คว่าเคยส่งการแจ้งเตือน "อีก 30 นาที" ให้ user คนนี้สำหรับกิจกรรมนี้หรือยัง
+                    # (เช็คตลอดทั้งชีวิต ไม่ใช่แค่วันนี้)
                     already_sent_urgent = Notification.objects.filter(
                         recipient=reg.user,
-                        title=f"⏰ อีก 30 นาที! กิจกรรม {activity.name}",
-                        created_at__date=today
+                        title__contains=f"อีก 30 นาที! กิจกรรม {activity.name}"
                     ).exists()
 
                     if not already_sent_urgent:
@@ -77,6 +79,9 @@ class Command(BaseCommand):
                             notification_type='warning'
                         )
                         count += 1
-                        self.stdout.write(f"   -> ส่งเตือนด่วนให้ {reg.user.username}")
+                        self.stdout.write(f"   -> ส่งเตือนด่วนให้ {reg.user.username} (กิจกรรม: {activity.name})")
 
-        self.stdout.write(self.style.SUCCESS(f'✅ ตรวจสอบเสร็จสิ้น ส่งแจ้งเตือนไปทั้งหมด: {count} รายการ'))
+        if count > 0:
+            self.stdout.write(self.style.SUCCESS(f'✅ ส่งแจ้งเตือนไปทั้งหมด: {count} รายการ'))
+        else:
+            self.stdout.write(self.style.SUCCESS('✨ ไม่มีการแจ้งเตือนที่ต้องส่ง'))

@@ -18,7 +18,9 @@ from .views import (
     get_all_tags,
     user_interests,
     check_user_has_interests,
-    recommended_activities
+    recommended_activities,
+    get_faculty_statistics,
+    get_registration_trend,
 )
 from .models import Registration
 from .serializers import RegistrationSerializer
@@ -95,6 +97,9 @@ urlpatterns = [
     # 👤 USER PROFILE
     # ========================================
     path('user/profile/', get_current_user_profile, name='user-profile'),
+
+    path('statistics/faculty/', get_faculty_statistics, name='faculty-statistics'),
+    path('statistics/registration-trend/', get_registration_trend, name='registration-trend'),
     
     # ========================================
     # 🏷️ TAG SYSTEM & RECOMMENDATION URLs

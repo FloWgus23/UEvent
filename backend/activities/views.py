@@ -633,3 +633,158 @@ def recommended_activities(request):
             'has_interests': False,
             'message': f'เกิดข้อผิดพลาด: {str(e)}'
         })
+    
+
+# ========================================
+# 📊 ORGANIZER DASHBOARD STATISTICS
+# ========================================
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_faculty_statistics(request):
+    """
+    ดึงสถิติสัดส่วนผู้ลงทะเบียนตามคณะ
+    สำหรับผู้จัดกิจกรรม (Organizer) เท่านั้น
+    """
+    # ⭐ Dictionary แปลงค่าคณะจากภาษาอังกฤษเป็นไทย
+    FACULTY_MAPPING = {
+        'science': 'คณะวิทยาศาสตร์',
+        'engineering': 'คณะวิศวกรรมศาสตร์',
+        'business': 'คณะบริหารศาสตร์',
+        'liberal_arts': 'คณะศิลปศาสตร์',
+        'agriculture': 'คณะเกษตรศาสตร์',
+        'nursing': 'คณะพยาบาลศาสตร์',
+        'pharmacy': 'คณะเภสัชศาสตร์',
+        'law': 'คณะนิติศาสตร์',
+        'political': 'คณะรัฐศาสตร์',
+        'other': 'อื่นๆ',
+        None: 'ไม่ระบุคณะ',
+        '': 'ไม่ระบุคณะ'
+    }
+    
+    try:
+        # ⭐ แก้ไข: เช็คจาก Profile แทน User
+        try:
+            organizer_status = request.user.profile.organizer_status
+            if organizer_status != 'approved':
+                print(f"❌ User {request.user.username} is not approved organizer (status: {organizer_status})")
+                return Response({"error": "Not authorized - Organizer not approved"}, status=403)
+        except AttributeError:
+            print(f"❌ User {request.user.username} has no organizer_status")
+            return Response({"error": "Not authorized - No organizer status"}, status=403)
+        
+        print(f"✅ User {request.user.username} is approved organizer")
+        
+        # ดึงกิจกรรมของ organizer คนนี้
+        my_activities = Activity.objects.filter(owner=request.user)
+        print(f"📊 Found {my_activities.count()} activities")
+        
+        if my_activities.count() == 0:
+            return Response({
+                'labels': ['ยังไม่มีกิจกรรม'],
+                'data': [0]
+            })
+        
+        # นับจำนวนผู้ลงทะเบียนแต่ละคณะ
+        faculty_stats = Registration.objects.filter(
+            activity__in=my_activities
+        ).values(
+            'user__profile__faculty'
+        ).annotate(
+            count=Count('id')
+        ).order_by('-count')
+        
+        print(f"📊 Faculty stats raw: {list(faculty_stats)}")
+        
+        # จัดรูปแบบข้อมูล และแปลงเป็นภาษาไทย
+        labels = []
+        data = []
+        
+        for stat in faculty_stats:
+            faculty_code = stat['user__profile__faculty']
+            # ⭐ แปลงเป็นภาษาไทย
+            faculty_name = FACULTY_MAPPING.get(faculty_code, faculty_code or 'ไม่ระบุคณะ')
+            labels.append(faculty_name)
+            data.append(stat['count'])
+        
+        # ถ้าไม่มีข้อมูลเลย ให้ส่ง fallback
+        if not labels:
+            return Response({
+                'labels': ['ยังไม่มีผู้ลงทะเบียน'],
+                'data': [0]
+            })
+        
+        print(f"✅ Faculty Statistics: {dict(zip(labels, data))}")
+        
+        return Response({
+            'labels': labels,
+            'data': data
+        })
+        
+    except Exception as e:
+        print(f"❌ Error in faculty statistics: {e}")
+        import traceback
+        traceback.print_exc()
+        return Response({
+            'labels': ['เกิดข้อผิดพลาด'],
+            'data': [1]
+        }, status=500)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_registration_trend(request):
+    """
+    ดึงแนวโน้มการลงทะเบียน 7 วันล่าสุด
+    สำหรับผู้จัดกิจกรรม (Organizer Dashboard)
+    """
+    try:
+        # ⭐ แก้ไข: เช็คจาก Profile แทน User
+        try:
+            organizer_status = request.user.profile.organizer_status
+            if organizer_status != 'approved':
+                print(f"❌ User {request.user.username} is not approved organizer (status: {organizer_status})")
+                return Response({"error": "Not authorized - Organizer not approved"}, status=403)
+        except AttributeError:
+            print(f"❌ User {request.user.username} has no organizer_status")
+            return Response({"error": "Not authorized - No organizer status"}, status=403)
+        
+        print(f"✅ User {request.user.username} is approved organizer")
+        
+        # คำนวณ 7 วันย้อนหลัง
+        today = timezone.now().date()
+        labels = []
+        data = []
+        
+        # ชื่อวันภาษาไทย
+        thai_days = ['จ.', 'อ.', 'พ.', 'พฤ.', 'ศ.', 'ส.', 'อา.']
+        
+        for i in range(6, -1, -1):  # 7 วันย้อนหลัง
+            target_date = today - timedelta(days=i)
+            
+            # นับจำนวนการลงทะเบียนในวันนั้น
+            count = Registration.objects.filter(
+                activity__owner=request.user,  # เฉพาะกิจกรรมของตัวเอง
+                registered_at__date=target_date
+            ).count()
+            
+            # ใช้ชื่อวันภาษาไทย
+            day_name = thai_days[target_date.weekday()]
+            labels.append(day_name)
+            data.append(count)
+        
+        print(f"✅ Registration trend: {dict(zip(labels, data))}")
+        
+        return Response({
+            'labels': labels,
+            'data': data
+        })
+        
+    except Exception as e:
+        print(f"❌ Error in get_registration_trend: {e}")
+        import traceback
+        traceback.print_exc()
+        return Response({
+            'labels': ['จ.', 'อ.', 'พ.', 'พฤ.', 'ศ.', 'ส.', 'อา.'],
+            'data': [0, 0, 0, 0, 0, 0, 0]
+        }, status=500)

@@ -372,8 +372,8 @@
   </div>
 </template>
 
+
 <script setup>
-import Navbar from "@/components/Navbar.vue"
 import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import {
@@ -389,7 +389,7 @@ import {
   ArcElement
 } from 'chart.js'
 import { Bar, Line, Doughnut } from 'vue-chartjs'
-import apiClient from '@/services/api.js' // ⭐ สำคัญ: ต้อง import apiClient
+import apiClient from '@/services/api.js'
 import activityService from '@/services/activityService.js'
 import newsService from '@/services/newsService.js'
 
@@ -400,7 +400,7 @@ const activeTab = ref('dashboard')
 
 // Dropdown & Logout
 const showDropdown = ref(false)
-const userProfile = ref(null) // ⭐ เพิ่มตัวแปรนี้
+const userProfile = ref(null)
 const toggleDropdown = () => (showDropdown.value = !showDropdown.value)
 const closeDropdown = () => (showDropdown.value = false)
 const handleLogout = () => {
@@ -444,10 +444,43 @@ const formatDate = (dateString) => {
 /* ================= DATA & CHARTS ================= */
 const dashboardStats = ref({ totalEvents: 0, totalRegistrations: 0, activeEvents: 0, totalNews: 0 })
 const upcomingEvents = ref([])
+
+// ⭐ แก้ไขให้ดึงข้อมูลจาก Backend
 const chartData = ref({
-  popularEvents: { labels: [], datasets: [{ label: 'ผู้ลงทะเบียน', backgroundColor: '#3B82F6', borderRadius: 6, data: [] }] },
-  registrationTrend: { labels: ['1', '2', '3', '4', '5', '6', '7'], datasets: [{ label: 'ยอดลงทะเบียนใหม่', borderColor: '#8B5CF6', backgroundColor: 'rgba(139, 92, 246, 0.1)', borderWidth: 3, pointBackgroundColor: '#ffffff', pointBorderColor: '#8B5CF6', fill: true, tension: 0.4, data: [0, 0, 0, 0, 0, 0, 0] }] },
-  demographics: { labels: ['คณะวิทยาศาสตร์', 'คณะวิศวกรรมศาสตร์', 'คณะบริหารธุรกิจ', 'อื่นๆ'], datasets: [{ backgroundColor: ['#3B82F6', '#8B5CF6', '#10B981', '#E5E7EB'], borderWidth: 0, data: [40, 35, 15, 10] }] }
+  popularEvents: { 
+    labels: [], 
+    datasets: [{ 
+      label: 'ผู้ลงทะเบียน', 
+      backgroundColor: '#3B82F6', 
+      borderRadius: 6, 
+      data: [] 
+    }] 
+  },
+  registrationTrend: { 
+    labels: ['กำลังโหลด...'], 
+    datasets: [{ 
+      label: 'ยอดลงทะเบียนใหม่', 
+      borderColor: '#8B5CF6', 
+      backgroundColor: 'rgba(139, 92, 246, 0.1)', 
+      borderWidth: 3, 
+      pointBackgroundColor: '#ffffff', 
+      pointBorderColor: '#8B5CF6',
+      pointBorderWidth: 2,
+      pointRadius: 4,
+      pointHoverRadius: 6,
+      fill: true, 
+      tension: 0.4, 
+      data: [0] 
+    }] 
+  },
+  demographics: { 
+    labels: ['กำลังโหลด...'], 
+    datasets: [{ 
+      backgroundColor: ['#E5E7EB'], 
+      borderWidth: 0, 
+      data: [1] 
+    }] 
+  }
 })
 
 const barChartOptions = { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, grid: { borderDash: [2, 4] } }, x: { grid: { display: false } } } }
@@ -497,13 +530,11 @@ const updateUpcomingEvents = (allActivities) => {
   })
 }
 
-// ⭐ Fixed fetchActivities to handle both Array and Pagination Object
 const fetchActivities = async () => {
   try {
     isLoading.value = true
     const res = await activityService.getMyActivities()
     
-    // Safety check: if res.data is object {results: [...]}, use results.
     const rawData = Array.isArray(res.data) ? res.data : (res.data.results || [])
     
     activities.value = rawData.map(a => ({ 
@@ -532,10 +563,9 @@ const fetchActivities = async () => {
   }
 }
 
-// ⭐ Fixed fetchNews similarly
 const fetchNews = async () => {
   try {
-    const res = await newsService.getMyNews() // ✅ ดึงเฉพาะข่าวที่ตัวเองสร้าง
+    const res = await newsService.getMyNews()
     const rawData = Array.isArray(res.data) ? res.data : (res.data.results || [])
     
     newsList.value = rawData.map(n => ({ 
@@ -548,6 +578,89 @@ const fetchNews = async () => {
     }))
     if (newsList.value.length) dashboardStats.value.totalNews = newsList.value.length
   } catch (e) { console.error(e) }
+}
+
+// ⭐ เพิ่มฟังก์ชันดึงสถิติจาก Backend
+const fetchFacultyStatistics = async () => {
+  try {
+    const response = await apiClient.get('/statistics/faculty/')
+    const { labels, data } = response.data
+    
+    if (labels && data && labels.length > 0) {
+      const colors = [
+        '#3B82F6', '#8B5CF6', '#10B981', '#F59E0B', 
+        '#EF4444', '#EC4899', '#6366F1', '#14B8A6'
+      ]
+      
+      const backgroundColor = labels.map((_, index) => colors[index % colors.length])
+      
+      chartData.value.demographics = {
+        labels: labels,
+        datasets: [{
+          backgroundColor: backgroundColor,
+          borderWidth: 0,
+          data: data
+        }]
+      }
+      
+      console.log('✅ Faculty statistics loaded:', { labels, data })
+    }
+  } catch (error) {
+    console.error('❌ Error loading faculty statistics:', error)
+    chartData.value.demographics = {
+      labels: ['ไม่มีข้อมูล'],
+      datasets: [{
+        backgroundColor: ['#E5E7EB'],
+        borderWidth: 0,
+        data: [1]
+      }]
+    }
+  }
+}
+
+const fetchRegistrationTrend = async () => {
+  try {
+    const response = await apiClient.get('/statistics/registration-trend/')
+    const { labels, data } = response.data
+    
+    if (labels && data) {
+      chartData.value.registrationTrend = {
+        labels: labels,
+        datasets: [{
+          label: 'ยอดลงทะเบียนใหม่',
+          borderColor: '#8B5CF6',
+          backgroundColor: 'rgba(139, 92, 246, 0.1)',
+          borderWidth: 3,
+          pointBackgroundColor: '#ffffff',
+          pointBorderColor: '#8B5CF6',
+          pointBorderWidth: 2,
+          pointRadius: 4,
+          pointHoverRadius: 6,
+          fill: true,
+          tension: 0.4,
+          data: data
+        }]
+      }
+      
+      console.log('✅ Registration trend loaded:', { labels, data })
+    }
+  } catch (error) {
+    console.error('❌ Error loading registration trend:', error)
+    chartData.value.registrationTrend = {
+      labels: ['จ.', 'อ.', 'พ.', 'พฤ.', 'ศ.', 'ส.', 'อา.'],
+      datasets: [{
+        label: 'ยอดลงทะเบียนใหม่',
+        borderColor: '#8B5CF6',
+        backgroundColor: 'rgba(139, 92, 246, 0.1)',
+        borderWidth: 3,
+        pointBackgroundColor: '#ffffff',
+        pointBorderColor: '#8B5CF6',
+        fill: true,
+        tension: 0.4,
+        data: [0, 0, 0, 0, 0, 0, 0]
+      }]
+    }
+  }
 }
 
 const viewRegistrations = (id) => router.push(`/organizer/activity/${id}/registrations`)
@@ -567,30 +680,25 @@ const deleteNews = async (id) => { if (confirm('ลบข่าว?')) { await n
 const createNews = () => router.push('/organizer/create-news')
 const switchToManageTab = () => (activeTab.value = 'home')
 
-// ⭐ Security Check & Mounting
+// ⭐ onMounted - เรียกใช้ฟังก์ชันทั้งหมด
 onMounted(async () => {
-  // Check permission
   const status = localStorage.getItem('organizer_status')
   
   if (status !== 'approved') {
       try {
-          const res = await apiClient.get('/auth/me/') // ✅ แก้เป็น /auth/me/
+          const res = await apiClient.get('/auth/me/')
           if (res.data.organizer_status !== 'approved') {
               throw new Error('Not approved')
           }
           localStorage.setItem('organizer_status', 'approved')
-          
-          // ⭐ เก็บ userProfile
           userProfile.value = res.data
           console.log('✅ [OrganizerDashboard] Profile loaded:', res.data.username)
-          console.log('✅ [OrganizerDashboard] Profile Image:', res.data?.profile?.profile_image)
       } catch (e) {
           alert('คุณไม่มีสิทธิ์เข้าถึงหน้านี้ กรุณาสมัครเป็นผู้จัดกิจกรรมก่อน')
           router.push('/')
           return
       }
   } else {
-      // ⭐ ถ้า status เป็น approved อยู่แล้ว ก็ยังต้องดึง profile
       try {
           const res = await apiClient.get('/auth/me/')
           userProfile.value = res.data
@@ -603,6 +711,8 @@ onMounted(async () => {
   document.addEventListener('click', handleClickOutside)
   fetchActivities()
   fetchNews()
+  fetchFacultyStatistics()      // ⭐ ดึงสัดส่วนคณะ
+  fetchRegistrationTrend()       // ⭐ ดึงแนวโน้มการลงทะเบียน
 })
 
 onUnmounted(() => document.removeEventListener('click', handleClickOutside))
