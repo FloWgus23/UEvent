@@ -146,7 +146,7 @@
           ค้นหา <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-200 to-white">กิจกรรม</span> ที่ใช่
         </h1>
         <p class="text-xl text-blue-100 font-light max-w-2xl mx-auto animate-fade-in-up delay-100">
-          เปิดประสบการณ์ใหม่ในรั้วมหาวิทยาลัย ค้นหาและเข้าร่วมกิจกรรมที่คุณสนใจได้ง่ายๆ
+          เปิดประสบการณ์ใหม่ในมหาวิทยาลัย ค้นหาและเข้าร่วมกิจกรรมที่คุณสนใจได้ง่ายๆ
         </p>
       </div>
 

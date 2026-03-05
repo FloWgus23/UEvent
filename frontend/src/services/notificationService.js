@@ -2,6 +2,8 @@
 import apiClient from './api'
 
 export default {
+
+  //ดูการแจ้งเตือน
   getMyNotifications() {
     return apiClient.get('/notifications/')
   },

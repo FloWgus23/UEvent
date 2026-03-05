@@ -11,6 +11,10 @@ try:
 except ImportError:
     Notification = None
 
+# ==========================================
+# ส่วนที่ 1: แอบดูสถานะเก่า (Pre-Save)
+# ==========================================
+
 @receiver(pre_save, sender=UserProfile)
 def track_previous_status(sender, instance, **kwargs):
     """
@@ -21,6 +25,10 @@ def track_previous_status(sender, instance, **kwargs):
         instance._previous_status = old_instance.organizer_status
     except UserProfile.DoesNotExist:
         instance._previous_status = None
+
+# ==========================================
+# ส่วนที่ 2: แจ้งเตือนผลอนุมัติ (Post-Save)
+# ==========================================
 
 @receiver(post_save, sender=UserProfile)
 def send_organizer_status_notification(sender, instance, created, **kwargs):
@@ -55,6 +63,7 @@ def send_organizer_status_notification(sender, instance, created, **kwargs):
             )
 
 
+#ลืมรหัสผ่าน
 @receiver(reset_password_token_created)
 def password_reset_token_created(sender, instance, reset_password_token, *args, **kwargs):
     """

@@ -3,6 +3,7 @@ from rest_framework import serializers
 from django.contrib.auth.models import User
 from .models import UserProfile
 
+#(สำหรับสมัครสมาชิก) รับข้อมูล Username, Email, Password, ชื่อ-นามสกุล
 class RegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)
     profile = serializers.DictField(write_only=True, required=False)
@@ -34,7 +35,8 @@ class RegisterSerializer(serializers.ModelSerializer):
             
         return user
 
-# ... (ส่วนอื่นของไฟล์คงเดิม)
+
+# (สำหรับข้อมูลส่วนตัวเพิ่มเติม)
 class UserProfileSerializer(serializers.ModelSerializer):
     profile_image = serializers.SerializerMethodField()
     class Meta:
@@ -49,6 +51,8 @@ class UserProfileSerializer(serializers.ModelSerializer):
             return obj.profile_image.url
         return None
 
+
+#(สำหรับโชว์ข้อมูล User ทั้งหมด)
 class UserSerializer(serializers.ModelSerializer):
     profile = UserProfileSerializer(read_only=True)
     fullname = serializers.SerializerMethodField()
@@ -73,6 +77,8 @@ class UserSerializer(serializers.ModelSerializer):
         except:
             return 'none'
 
+
+#(สำหรับแก้ไขข้อมูล)
 class UserUpdateSerializer(serializers.ModelSerializer):
     phone = serializers.CharField(write_only=True, required=False, allow_blank=True)
     bio = serializers.CharField(write_only=True, required=False, allow_blank=True)

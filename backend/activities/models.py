@@ -57,6 +57,7 @@ class Tag(models.Model):
     def __str__(self):
         return f"{self.icon} {self.name}" if self.icon else self.name
 
+
 #ความสนใจของผู้ใช้งาน 
 class UserInterest(models.Model):
     """
@@ -115,6 +116,7 @@ class UserInterest(models.Model):
         """คำนวณคะแนนรวม (70% explicit + 30% implicit)"""
         return (0.7 * float(self.explicit_score)) + (0.3 * float(self.implicit_score))
 
+
 #กิจกรรมกับการเลือก tag ได้แบบ Many-to-many
 class ActivityTag(models.Model):
     """
@@ -144,6 +146,7 @@ class ActivityTag(models.Model):
         return f"{self.activity.name} - {self.tag.name}"
 
 
+
 # ========================================
 # EXISTING MODELS
 # ========================================
@@ -155,6 +158,7 @@ class Activity(models.Model):
         ('กำลังรับสมัคร', 'กำลังรับสมัคร'),
         ('กำลังดำเนินการ', 'กำลังดำเนินการ'),
         ('สิ้นสุดแล้ว', 'สิ้นสุดแล้ว'),
+        ('cancelled', 'ยกเลิกกิจกรรม'),
     ]
     
     # หมวดหมู่มาตรฐาน
@@ -238,6 +242,7 @@ class Activity(models.Model):
         if self.start_time and self.end_time:
             return f"{self.start_time.strftime('%H:%M')} - {self.end_time.strftime('%H:%M')}"
         return None
+
 
 #เก็บการลงทะเบียนของ User คนไหน -> สมัครกิจกรรมอะไร -> เมื่อไหร่
 class Registration(models.Model):

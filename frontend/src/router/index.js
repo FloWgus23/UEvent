@@ -16,12 +16,8 @@ import ActivityDetail from '../views/ActivityDetail.vue'
 import MyActivities from '../views/MyActivities.vue'
 import ActivityRegistrations from '../views/ActivityRegistrations.vue'
 import UserDashboard from '../views/UserDashboard.vue'
-
-// Import หน้า RequestOrganizer และ WaitingForApproval
 import RequestOrganizer from '../views/RequestOrganizer.vue'
 import WaitingForApproval from '../views/WaitingForApproval.vue'
-
-// ⭐ เพิ่ม Import หน้า ForgotPassword (อย่าลืมสร้างไฟล์ ForgotPassword.vue ใน folder views ด้วยนะครับ)
 import ForgotPassword from '../views/ForgotPassword.vue' 
 
 const routes = [
@@ -29,7 +25,7 @@ const routes = [
   { path: '/login', name: 'Login', component: Login },
   { path: '/register', name: 'Register', component: Register },
   
-  // ⭐ เพิ่ม Route สำหรับหน้าลืมรหัสผ่าน
+  // หน้าลืมรหัสผ่าน
   { path: '/forgot-password', name: 'ForgotPassword', component: ForgotPassword },
 
   // หน้า News

@@ -9,18 +9,20 @@ from django.contrib.auth.models import User
 from .serializers import RegisterSerializer, UserSerializer, UserUpdateSerializer
 from .models import UserProfile
 
+#การลงทะเบียน รับข้อมูลสมัครสมาชิก (Username, Password, Email)
 class RegisterView(generics.CreateAPIView):
     queryset = User.objects.all()
     serializer_class = RegisterSerializer
 
+#จัดการโปรไฟล์
 class UserProfileView(APIView):
     permission_classes = [IsAuthenticated]
 
-    def get(self, request):
+    def get(self, request):   #get (ดูข้อมูล): ดึงข้อมูลของ "ฉัน" (User ที่ Login อยู่) ออกมาดู
         serializer = UserSerializer(request.user, context={'request': request})
         return Response(serializer.data)
     
-    def put(self, request):
+    def put(self, request):    #(แก้ไขทั้งหมด): แก้ไขข้อมูลแบบยกชุด
         serializer = UserUpdateSerializer(request.user, data=request.data, partial=False)
         if serializer.is_valid():
             serializer.save()
@@ -31,7 +33,7 @@ class UserProfileView(APIView):
             })
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
-    def patch(self, request):
+    def patch(self, request):    #(แก้ไขบางส่วน): แก้ไขแค่บางฟิลด์ เช่น อยากแก้แค่เบอร์โทร ก็ส่งมาแค่เบอร์โทร (Field อื่นค่าเดิมไม่หาย)
         serializer = UserUpdateSerializer(request.user, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
@@ -42,10 +44,11 @@ class UserProfileView(APIView):
             })
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+#จัดการรูปโปรไฟล์
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 @parser_classes([MultiPartParser, FormParser])
-def upload_profile_image(request):
+def upload_profile_image(request):      #เช็คว่ามีไฟล์ส่งมาไหม ถ้า User มีรูปเดิมอยู่แล้ว ระบบจะลบทิ้งก่อน (เพื่อไม่ให้เปลืองพื้นที่ Server) แล้วค่อยเซฟรูปใหม่
     if 'profile_image' not in request.FILES:
         return Response({'error': 'กรุณาเลือกรูปภาพ'}, status=status.HTTP_400_BAD_REQUEST)
     
@@ -64,7 +67,7 @@ def upload_profile_image(request):
 
 @api_view(['DELETE'])
 @permission_classes([IsAuthenticated])
-def delete_profile_image(request):
+def delete_profile_image(request):          #สั่งลบรูปโปรไฟล์ทิ้ง ให้กลับไปใช้รูป Default
     if hasattr(request.user, 'profile') and request.user.profile.profile_image:
         request.user.profile.profile_image.delete(save=True)
         user_serializer = UserSerializer(request.user, context={'request': request})
@@ -74,29 +77,30 @@ def delete_profile_image(request):
         })
     return Response({'error': 'ไม่มีรูปโปรไฟล์ให้ลบ'}, status=status.HTTP_404_NOT_FOUND)
 
-# ⭐ API ใหม่: ขอสิทธิ์เป็นผู้จัดกิจกรรม
-@api_view(['POST'])
-@permission_classes([IsAuthenticated])
-def request_organizer_role(request):
-    """User กดส่งคำขอเป็นผู้จัด"""
-    profile, created = UserProfile.objects.get_or_create(user=request.user)
-    
-    if profile.organizer_status == 'pending':
-        return Response({'message': 'คำขอของคุณอยู่ระหว่างการพิจารณา'}, status=status.HTTP_400_BAD_REQUEST)
-    
-    if profile.organizer_status == 'approved':
-        return Response({'message': 'คุณเป็นผู้จัดกิจกรรมอยู่แล้ว'}, status=status.HTTP_400_BAD_REQUEST)
-    
-    profile.organizer_status = 'pending'
-    profile.save()
-    
-    # ส่งข้อมูลกลับไปอัปเดตหน้าจอทันที
-    user_serializer = UserSerializer(request.user, context={'request': request})
-    return Response({
-        'message': 'ส่งคำขอเรียบร้อยแล้ว กรุณารอการอนุมัติจากผู้ดูแลระบบ',
-        'data': user_serializer.data
-    })
 
+# @api_view(['POST'])
+# @permission_classes([IsAuthenticated])
+# def request_organizer_role(request):     #ขอสิทธิ์เป็นผู้จัดกิจกรรม
+#     """User กดส่งคำขอเป็นผู้จัด"""
+#     profile, created = UserProfile.objects.get_or_create(user=request.user)
+#     #เช็คสถานะก่อน:
+#     if profile.organizer_status == 'pending':
+#         return Response({'message': 'คำขอของคุณอยู่ระหว่างการพิจารณา'}, status=status.HTTP_400_BAD_REQUEST)
+    
+#     if profile.organizer_status == 'approved':
+#         return Response({'message': 'คุณเป็นผู้จัดกิจกรรมอยู่แล้ว'}, status=status.HTTP_400_BAD_REQUEST)
+    
+#     profile.organizer_status = 'pending'
+#     profile.save()
+    
+#     # ส่งข้อมูลกลับไปอัปเดตหน้าจอทันที
+#     user_serializer = UserSerializer(request.user, context={'request': request})
+#     return Response({
+#         'message': 'ส่งคำขอเรียบร้อยแล้ว กรุณารอการอนุมัติจากผู้ดูแลระบบ',
+#         'data': user_serializer.data
+#     })
+
+# API ใหม่: ขอสิทธิ์เป็นผู้จัดกิจกรรม
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 @parser_classes([MultiPartParser, FormParser]) # ⭐ รองรับ FormData

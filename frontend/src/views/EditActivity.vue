@@ -113,6 +113,7 @@
                 <option value="กำลังรับสมัคร">🟢 กำลังรับสมัคร</option>
                 <option value="กำลังดำเนินการ">🔵 กำลังดำเนินการ</option>
                 <option value="สิ้นสุดแล้ว">🔴 สิ้นสุดแล้ว</option>
+                <option value="cancelled">❌ ยกเลิกกิจกรรม</option>
               </select>
               <i class="fa-solid fa-chevron-down absolute right-4 top-4 text-gray-400 pointer-events-none"></i>
             </div>

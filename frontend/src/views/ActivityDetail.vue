@@ -402,8 +402,8 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import activityService from '@/services/activityService'
-import apiClient from '@/services/api.js'
+import activityService from '@/services/activityService'       //ไฟล์รวมฟังก์ชันเกี่ยวกับกิจกรรม (ดึงข้อมูล, ลงทะเบียน)
+import apiClient from '@/services/api.js'                      //ตัวยิง API กลาง (ใช้ดึง User Profile)
 
 // --- Helper Functions ---
 const getCategoryIcon = (categoryName) => {

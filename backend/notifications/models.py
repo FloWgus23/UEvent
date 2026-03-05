@@ -7,6 +7,7 @@ class Notification(models.Model):
         ('user', 'รายบุคคล')
     ]
     
+    #ตัวเลือกการแจ้งเตือน
     TYPE_CHOICES = [
         ('info', 'ข่าวสาร'),
         ('success', 'สำเร็จ'),
@@ -21,8 +22,8 @@ class Notification(models.Model):
     is_read = models.BooleanField(default=False, verbose_name='อ่านแล้ว')
     created_at = models.DateTimeField(auto_now_add=True)
 
-    class Meta:
-        ordering = ['-created_at']
+    class Meta:  
+        ordering = ['-created_at']   #"เรียงจากใหม่ไปเก่า"
         verbose_name = 'การแจ้งเตือน'
         verbose_name_plural = 'การแจ้งเตือน'
 

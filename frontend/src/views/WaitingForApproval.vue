@@ -68,7 +68,7 @@
           </div>
         </div>
 
-        <div class="flex justify-center">
+        <div class="flex justify-center">   
           <button 
             @click="$router.push('/')" 
             class="px-10 py-4 rounded-xl bg-gradient-to-r from-[#1E3A8A] to-[#2563EB] hover:to-[#1D4ED8] text-white font-bold shadow-lg shadow-blue-900/20 transition-all transform hover:-translate-y-1 active:translate-y-0 text-base min-w-[200px]"

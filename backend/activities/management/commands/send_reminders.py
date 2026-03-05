@@ -4,6 +4,7 @@ from datetime import datetime, timedelta
 from activities.models import Activity, Registration
 from notifications.models import Notification
 
+# ส่งการแจ้งเตือนอัตโนมัติ
 class Command(BaseCommand):
     help = 'ส่งการแจ้งเตือนกิจกรรมตาม Timeline (ไม่ส่งซ้ำ)'
 

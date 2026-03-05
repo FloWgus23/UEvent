@@ -1,8 +1,8 @@
 // frontend/src/services/api.js
 import axios from "axios";
-
+//กำหนด URL หลักของ API
 const API_BASE_URL = (import.meta.env.VITE_API_URL || "http://localhost:8000") + "/api";
-
+//สร้างตัวแปร apiClient โดยมี baseURL และ headers
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
   headers: {

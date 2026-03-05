@@ -18,6 +18,7 @@ export default {
   },
 
   // ต่ออายุ Token
+  // หน้าที่: เมื่อ Access Token หมดอายุ (เข้าเว็บไม่ได้) ให้เอา Refresh Token (กุญแจสำรอง) ไปแลกใบใหม่มา
   refreshToken(token) {
     return apiClient.post('/auth/refresh/', { refresh: token })
   },

@@ -9,6 +9,7 @@ from .models import Activity, Registration, Tag, UserInterest, ActivityTag
 # 🆕 TAG SYSTEM SERIALIZERS
 # ========================================
 
+# แท็ก
 class TagSerializer(serializers.ModelSerializer):
     """Serializer สำหรับ Tag"""
     class Meta:
@@ -17,6 +18,7 @@ class TagSerializer(serializers.ModelSerializer):
         read_only_fields = ['id']
 
 
+#ความสนใจของผู้ใช้
 class UserInterestSerializer(serializers.ModelSerializer):
     """Serializer สำหรับแสดงความสนใจของผู้ใช้"""
     tag = TagSerializer(read_only=True)
@@ -32,6 +34,7 @@ class UserInterestSerializer(serializers.ModelSerializer):
         read_only_fields = ['id', 'last_updated']
 
 
+# สร้าง ผู้ใช้ใหม่จากการเลือกในหน้า Modal
 class UserInterestCreateSerializer(serializers.Serializer):
     """
     Serializer สำหรับสร้าง UserInterest จาก Modal
@@ -45,7 +48,7 @@ class UserInterestCreateSerializer(serializers.Serializer):
         decimal_places=2,
         min_value=Decimal('0.0'),
         max_value=Decimal('10.0'),
-        default=Decimal('5.0')
+        default=Decimal('5.0')  #เพราะว่าค่า Default ที่เราตั้งไว้ใน Onboarding.vue คือ 5.00
     )
     
     def validate_tag_id(self, value):
@@ -55,6 +58,7 @@ class UserInterestCreateSerializer(serializers.Serializer):
         return value
 
 
+#รองรับการเลือกแท็กหลายตัวในหน้า Onboarding 
 class BulkUserInterestCreateSerializer(serializers.Serializer):
     """
     Serializer สำหรับรับ Tags หลายตัวจาก Onboarding Modal
@@ -103,6 +107,7 @@ class BulkUserInterestCreateSerializer(serializers.Serializer):
 # EXISTING SERIALIZERS (ปรับปรุง)
 # ========================================
 
+#โปรไฟล์
 class UserProfileSerializer(serializers.ModelSerializer):
     fullname = serializers.SerializerMethodField()
     phone = serializers.SerializerMethodField()
@@ -124,6 +129,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
         return ""
 
 
+#ข้อมูลกิจกรรม
 class ActivitySerializer(serializers.ModelSerializer):
     """Serializer สำหรับแสดงข้อมูลกิจกรรม"""
     registration_status = serializers.ReadOnlyField()
@@ -156,6 +162,7 @@ class ActivitySerializer(serializers.ModelSerializer):
         return None
 
 
+#สร้างกิจกรรม
 class ActivityCreateSerializer(serializers.ModelSerializer):
     """Serializer สำหรับสร้างกิจกรรมใหม่"""
     
@@ -218,6 +225,7 @@ class ActivityCreateSerializer(serializers.ModelSerializer):
         return activity
 
 
+#แก้ไขกิจกรรม
 class ActivityUpdateSerializer(serializers.ModelSerializer):
     """Serializer สำหรับแก้ไขกิจกรรม"""
     
@@ -293,6 +301,7 @@ class ActivityUpdateSerializer(serializers.ModelSerializer):
         return instance
 
 
+#รายชื่อคนลงทะเบียนกิจกรรม
 class RegistrationSerializer(serializers.ModelSerializer):
     activity = ActivitySerializer(read_only=True)
     user_name = serializers.CharField(source='user.username', read_only=True)

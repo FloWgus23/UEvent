@@ -12,7 +12,6 @@ from django.shortcuts import get_object_or_404
 import traceback
 import random
 
-# ⭐ เพิ่ม import สำหรับจัดการเวลา
 from django.utils import timezone
 import datetime
 from datetime import timedelta
@@ -29,10 +28,8 @@ from .serializers import (
     UserProfileSerializer
 )
 
-# ========================================
-# 🔧 UTILITY FUNCTIONS
-# ========================================
 
+#อัปเตดสถานะกิจกรรม
 def update_activity_status_by_time(activity):
     """
     อัพเดทสถานะกิจกรรมตามเวลาจริง
@@ -72,6 +69,7 @@ def update_activity_status_by_time(activity):
         activity.save(update_fields=['status'])
 
 
+#ใช้ Time Decay ( ทาม-ดีเค ) ในการลดคะแนนความสนใจเมื่อเปลี่ยนไปตามเวลาครับ
 def calculate_time_decay_factor(last_updated):
     """
     🆕 คำนวณค่า Decay ตามเวลา (ไม่ต้องแก้ Model)
@@ -98,6 +96,7 @@ def calculate_time_decay_factor(last_updated):
         return 0.3
 
 
+# อัพเดต implicit_score ( คะแนนที่คอยเก็บจากการที่ดูกิจกรรม - ลงทะเบียนกิจกรรม - ยกเลิกการลงทะเบียนกิจกรรม )
 def update_implicit_score(user, activity, interaction_type):
     """
     🔧 IMPROVED: ฟังก์ชันอัปเดตคะแนนความสนใจแบบ Implicit
@@ -115,9 +114,9 @@ def update_implicit_score(user, activity, interaction_type):
         
         # กำหนดค่าคะแนนตาม interaction
         score_map = {
-            'view': 0.5,
-            'register': 2.5,
-            'unregister': -1.5
+            'view': 0.5,                 #ดูกิจกรรม 
+            'register': 2.5,             #ลงทะเบียนกิจกรรม 
+            'unregister': -1.5           #ยกเลิกการลงทะเบียนกิจกรรม
         }
         
         score_delta = score_map.get(interaction_type, 0)
@@ -146,10 +145,9 @@ def update_implicit_score(user, activity, interaction_type):
         traceback.print_exc()
 
 
-# ========================================
-# 📅 ACTIVITY VIEWSET (Main Logic)
-# ========================================
 
+
+#กิจกรรมทั้งหมด
 class ActivityViewSet(viewsets.ModelViewSet):
     queryset = Activity.objects.all()
     permission_classes = [AllowAny]
@@ -259,7 +257,8 @@ class ActivityViewSet(viewsets.ModelViewSet):
     # ---------------------------------------------------------
     # ⚡ ACTIONS (Register, Log View, etc.)
     # ---------------------------------------------------------
-
+    #กลุ่มคำสั่งพิเศษใช้ Action
+    # ลงทะเบียนกิจกรรม
     @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
     def register(self, request, pk=None):
         """ลงทะเบียนเข้าร่วมกิจกรรม"""
@@ -320,6 +319,7 @@ class ActivityViewSet(viewsets.ModelViewSet):
                 'error': f'เกิดข้อผิดพลาด: {str(e)}'
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+    #เช็คว่าลงทะเบียนกิจกรรมยัง จะแสดงในหน้า ActivityDetail.vue ครับ
     @action(detail=True, methods=['get'], permission_classes=[IsAuthenticated])
     def check_registration(self, request, pk=None):
         """เช็คว่าลงทะเบียนหรือยัง"""
@@ -330,6 +330,7 @@ class ActivityViewSet(viewsets.ModelViewSet):
         ).exists()
         return Response({'is_registered': is_registered})
 
+    #ยกเลิกการลงทะเบียนกิจกรรม
     @action(detail=True, methods=['delete'], permission_classes=[IsAuthenticated])
     def unregister(self, request, pk=None):
         """ยกเลิกการลงทะเบียน"""
@@ -351,7 +352,8 @@ class ActivityViewSet(viewsets.ModelViewSet):
             return Response({'message': 'ยกเลิกการลงทะเบียนสำเร็จ'})
         except Registration.DoesNotExist:
             return Response({'error': 'ไม่พบข้อมูลการลงทะเบียน'}, status=status.HTTP_404_NOT_FOUND)
-
+    
+    #ดูรายชื่อคนลงทะเบียน ฝั่งผู้สร้างกิจกรรม 
     @action(detail=True, methods=['get'])
     def registrations(self, request, pk=None):
         activity = self.get_object()
@@ -359,6 +361,7 @@ class ActivityViewSet(viewsets.ModelViewSet):
         serializer = RegistrationSerializer(registrations, many=True, context={'request': request})
         return Response(serializer.data)
 
+    #ดึงเฉพาะกิจกรรมที่เราเป็นคนสร้าง  ฝั่งผู้สร้างกิจกรรม
     @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
     def my_activities(self, request):
         """
@@ -378,38 +381,41 @@ class ActivityViewSet(viewsets.ModelViewSet):
 
 
 # ========================================
-# 👤 USER PROFILE & TAG SYSTEM
+# 👤 USER PROFILE & TAG SYSTEM : โปร์ไฟล์ และ ระบบแท็ก
 # ========================================
 
+#ดึงข้อมูลโปรไฟล์ของฉัน  แสดงชื่อและข้อมูลของผู้ใช้ หรือใช้ตรง Navbar เพื่อโชว์รูปโปรไฟล์เล็กๆ
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def get_current_user_profile(request):
-    serializer = UserProfileSerializer(request.user, context={'request': request})
+    serializer = UserProfileSerializer(request.user, context={'request': request})  #ดูจาก Token ที่แนบมา
     return Response(serializer.data)
 
 
+#แสดงใน Onboarding Modal (หน้าต่างเด้งตอนสมัครใหม่) ให้ user เลือกสิ่งที่สนใจ
 @api_view(['GET'])
 @permission_classes([AllowAny])
-def get_all_tags(request):
+def get_all_tags(request):  #ดึงแท็กทั้งหมด
     """ดึง Tags ทั้งหมด"""
     try:
-        tags = Tag.objects.filter(is_active=True).order_by('name')
+        tags = Tag.objects.filter(is_active=True).order_by('name') #เรียงตาม ก-ฮ
         serializer = TagSerializer(tags, many=True)
         return Response(serializer.data)
     except Exception as e:
         return Response({'error': str(e)}, status=500)
 
 
+#จัดการความสนใจ
 @api_view(['GET', 'POST'])
 @permission_classes([IsAuthenticated])
 def user_interests(request):
     """จัดการความสนใจของผู้ใช้"""
-    if request.method == 'GET':
+    if request.method == 'GET':      #คือสมัครไปแล้ว เลือกไปแล้ว ไปดึง tag ที่เลือกใน Database มาแสดง 
         interests = UserInterest.objects.filter(user=request.user)
         serializer = UserInterestSerializer(interests, many=True)
         return Response(serializer.data)
     
-    elif request.method == 'POST':
+    elif request.method == 'POST':    #คือสมัครใหม่ เลือกใหม่ = แสดงหน้า Onboarding ให้ผู้ใช้เลือก แล้วบันทึกลง Database 
         serializer = BulkUserInterestCreateSerializer(
             data=request.data, 
             context={'request': request}
@@ -424,6 +430,7 @@ def user_interests(request):
         return Response(serializer.errors, status=400)
 
 
+#เช็คว่าเราเป็นผู้ใช้ใหม่ = Onboarding , ถ้ามีบัญชีแล้ว = Feed
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def check_user_has_interests(request):
@@ -432,7 +439,7 @@ def check_user_has_interests(request):
 
 
 # ========================================
-# 🧠 RECOMMENDATION SYSTEM (IMPROVED)
+# 🧠 RECOMMENDATION SYSTEM (IMPROVED) : ระบบแนะนำ
 # ========================================
 
 @api_view(['GET'])
@@ -450,6 +457,8 @@ def recommended_activities(request):
     ✅ แก้ Performance (ใช้ Prefetch)
     """
     
+    ## ดึงกิจกรรมที่ "ใหม่ล่าสุด" (-created_at) และ "คนลงทะเบียนเยอะสุด" (-registered_count) 
+    # เอามาแค่ 20 อันดับแรก
     def get_popular_activities():
         """ดึงกิจกรรมยอดนิยม (ล่าสุด + คนลงทะเบียนเยอะ)"""
         return Activity.objects.filter(
@@ -458,7 +467,7 @@ def recommended_activities(request):
 
     try:
         # ========================================
-        # CASE 1: GUEST USER
+        # CASE 1: GUEST USER : ไม่ได้ล็อกอิน
         # ========================================
         if not request.user.is_authenticated:
             activities = get_popular_activities()
@@ -470,8 +479,9 @@ def recommended_activities(request):
                 'message': 'กิจกรรมล่าสุด (สำหรับบุคคลทั่วไป)'
             })
 
-        # ========================================
-        # CASE 2: MEMBER WITHOUT INTERESTS
+        # ======================================== 
+        # CASE 2: MEMBER WITHOUT INTERESTS : Login แล้ว แต่ยังไม่เคยเลือกความสนใจ 
+        # (ระบบยังไม่รู้จักนิสัย เลยส่งกิจกรรมยอดนิยมให้ดูก่อน)
         # ========================================
         user = request.user
         user_interests = UserInterest.objects.filter(user=user).select_related('tag')
@@ -487,17 +497,18 @@ def recommended_activities(request):
             })
         
         # ========================================
-        # CASE 3: PERSONALIZED RECOMMENDATION
+        # CASE 3: PERSONALIZED RECOMMENDATION : Login แล้ว และมีประวัติความสนใจแล้ว
+        # (ระบบรู้จักแล้วว่าชอบอะไร -> คำนวณสูตรแนะนำแบบ Personalized)
         # ========================================
         
-        # 🆕 คำนวณคะแนนพร้อม Time Decay
+        # 🆕 คำนวณคะแนนพร้อม Time Decay ( ทาม - ดีเค ) --ลดความสนใจ
         interests_with_decay = []
         for interest in user_interests:
             decay_factor = calculate_time_decay_factor(interest.last_updated)
             
-            # คำนวณ Total Score (Explicit 70% + Implicit 30%) * Decay
+            # คำนวณ Total Score (Explicit 70% + Implicit 30%) * Decay 
             base_score = (0.7 * float(interest.explicit_score)) + (0.3 * float(interest.implicit_score))
-            final_score = base_score * decay_factor
+            final_score = base_score * decay_factor     # สูตร: (คะแนนที่เลือกเอง 70% + คะแนนพฤติกรรม 30%) * ค่าเสื่อมตามเวลา
             
             interests_with_decay.append({
                 'tag_id': interest.tag_id,
@@ -507,49 +518,62 @@ def recommended_activities(request):
         
         # เรียงตามคะแนนจากมากไปน้อย
         interests_with_decay.sort(key=lambda x: x['score'], reverse=True)
-        interested_tag_ids = [item['tag_id'] for item in interests_with_decay]
+        interested_tag_ids = [item['tag_id'] for item in interests_with_decay]    #ตัวอย่างเวลาดึงข้อมูล [ 5,12,3,8,7,19]
         
         # ✅ ใช้ Prefetch เพื่อแก้ N+1 Query
         matching_activities = Activity.objects.filter(
-            tag_list__id__in=interested_tag_ids,
-            status__in=['กำลังรับสมัคร', 'กำลังดำเนินการ']
-        ).prefetch_related('tag_list').distinct()
+            tag_list__id__in=interested_tag_ids,              # หากิจกรรมที่มี tag ตรงกับที่เราชอบ interest_tag_ids = [5,12,3] มาดูว่ามีกิจกรรมไหนตรงกับที่เราเลือกไว้บ้าง
+            status__in=['กำลังรับสมัคร', 'กำลังดำเนินการ']          # เอาเฉพาะที่ยังไม่จบ
+        ).prefetch_related('tag_list').distinct()  #มันคือการบอก Database ว่า "ขนข้อมูล Tag ของกิจกรรมพวกนี้มาด้วยเลยนะ ทีเดียวจบ" prefetch=ดึงแท็กมาพร้อมกัน , distinct= ลบข้อมูลซ้ำ
         
-        # คำนวณคะแนนความตรงกับความสนใจ
+        # คำนวณคะแนนความตรงกับความสนใจ สร้าง list เปล่า เพื่อเก็บกิจกรรมพร้อมคะแนน
         activities_with_score = []
         
-        for activity in matching_activities:
+        for activity in matching_activities:  #วนลูปทุกกกิจกรรมที่หาเจอ
             # ✅ ใช้ค่าที่ prefetch แล้ว (ไม่มี Query เพิ่ม)
-            activity_tag_ids = {tag.id for tag in activity.tag_list.all()}
-            matched_tag_ids = set(interested_tag_ids) & activity_tag_ids
+            activity_tag_ids = {tag.id for tag in activity.tag_list.all()}  #ดึงแท็ก id ของกิจกรรมนี้ กิจกรรม "วิ่งมาราธอน" มี Tags: กีฬา(5), กลางแจ้ง(12), แข่งขัน(8) = {5,12,8}
+            matched_tag_ids = set(interested_tag_ids) & activity_tag_ids  #หากิจกรรมที่ตรงใจกันระหว่าง User กับ แท็ก ของกิจกรรม เช่น ตรงกัน 5 กับ 12 Intersection
             
-            if not matched_tag_ids:
+            if not matched_tag_ids:   #ถ้าไม่มีแท็กตรงกันเลย ให้ข้ามไปรอบถัดไปครับ 
                 continue
             
             # รวมคะแนนจาก Tags ที่ตรงกัน
             total_score = 0
-            for tid in matched_tag_ids:
+            for tid in matched_tag_ids:    #วนลูปทุก Tag ID ที่ตรงกัน  เช่น matched_tag_ids = {5,12} ----> วน 2 รอบ
                 # หาคะแนนจาก interests_with_decay
-                for item in interests_with_decay:
-                    if item['tag_id'] == tid:
+                for item in interests_with_decay:    #วนลูปหาคะแนนของแท็กนี้จาก interests_with_decay
+                    if item['tag_id'] == tid:      #ถ้าเจอ Tag ID ที่ตรงกัน เพิ่มคะแนนเข้า Total_score , break หยุดเมื่อเจอแล้ว
                         total_score += item['score']
                         break
             
             # Normalize score (0-1)
-            max_possible = len(matched_tag_ids) * 10  # แต่ละ tag สูงสุด 10 คะแนน
-            match_score = (total_score / max_possible) if max_possible > 0 else 0
+            max_possible = len(matched_tag_ids) * 10  # แต่ละ tag สูงสุด 10 คะแนน   จำนวนแท็กที่ตรง * 10 เช่น ตรงกัน 2 ก็เท่ากับ 2 * 10 = 20
+            match_score = (total_score / max_possible) if max_possible > 0 else 0    #เพื่อให้คะแนนอยู่ในช่วง 0 - 1 , ป้องกันการหารด้วย 0
+            #การหารด้วย max_possible เพื่อปรับคะแนนให้อยู่ในช่วง 0 ถึง 1 เสมอ ทำให้เปรียบเทียบง่ายครับ
+
+            #  max_possible = 2 * 10 = 20
+            #  match_score = 12.18/20 = 0.609 (60.9%)
             
-            activities_with_score.append({
-                'activity': activity,
-                'match_score': round(match_score, 2),
-                'matched_tags': len(matched_tag_ids)
+            activities_with_score.append({   #เพิ่ม dic เข้า list
+                'activity': activity,    #object ของกิจกรรม 
+                'match_score': round(match_score, 2),   #คะแนนความตรงกัน ปัดเศษ 2 ตำแหน่ง
+                'matched_tags': len(matched_tag_ids)   #จำนวนแท็กที่ตรง
             })
+
+            # activities_with_score = [
+            #   {
+            #      'activity':<Activity: วิ่งมาราธอน >,
+            #      'match_score':0.85,
+            #      'matched_tags':3
+            #    }
+            #]
         
         # ========================================
-        # FALLBACK: ถ้าไม่เจอกิจกรรมที่ตรงใจ
+        # FALLBACK: ถ้าไม่เจอกิจกรรมที่ตรงใจ : ถ้าหาที่ตรงใจไม่ได้เลย สักอันเดียว" (เช่น ผู้ใช้ชอบ Tag แปลกๆ ที่ช่วงนี้ไม่มีกิจกรรมจัดเลย)
+        # ระบบจะไม่ส่งหน้าว่างๆ กลับไป แต่จะเปลี่ยนแผนไปดึง "กิจกรรมยอดฮิต" (Popular) มาแสดงแทนครับ ให้ User มีอะไรดูแก้ขัดไปก่อน
         # ========================================
-        if not activities_with_score:
-            activities = get_popular_activities()
+        if not activities_with_score:   #เช็คว่า activities_with_score ว่างมั้ย
+            activities = get_popular_activities()  #เรียกใช้ get_popular_activities
             serializer = ActivitySerializer(activities, many=True, context={'request': request})
             return Response({
                 'activities': serializer.data,
@@ -559,68 +583,103 @@ def recommended_activities(request):
             })
 
         # ========================================
-        # 🆕 DIVERSITY: 80% Personalized + 20% Random
+        # 🆕 DIVERSITY: 80% Personalized + 20% Random 
+        # เลือกกิจกรรมที่คะแนนเยอะที่สุดมา 80%
+        # ไปสุ่มกิจกรรมอื่นที่ ไม่ได้อยู่ใน list ข้างบน มาอีก 20%
         # ========================================
         
-        # เรียงตามคะแนน
-        activities_with_score.sort(key=lambda x: (-x['match_score'], -x['matched_tags']))
+        # เรียงลำดับกิจกรรมตามคะแนน   กำหนดเกณฑ์การเรียง  คะแนนสูงสุดก่อน ถ้าคะแนนเท่ากัน ให้ดู Tags ที่ตรงเยอะกว่า
+        activities_with_score.sort(key=lambda x: (-x['match_score'], -x['matched_tags'])) 
         
         # แบ่งเป็น 80% Personalized
-        personalized_count = max(1, int(len(activities_with_score) * 0.8))
-        personalized_activities = activities_with_score[:personalized_count]
+        personalized_count = max(1, int(len(activities_with_score) * 0.8))  #คำนวณจากกิจกรรมที่จะเลือก = 80% ของทั้งหมด , int ปัดเศษลง , ป้องกันการเป็น 0   1 รายการ
+        # สมมุติมี 10 รายการ personalized_count = int(10*0.8) = 8 รายการ
+        # สมมุติมี 3 รายการ personalized_count = int(3*0.8) = 2 รายการ ไม่ใช้ 2.4 
+        # สมมุติมี 1 รายการ personalized_count = int(1*0.8) = 0 , max(1,0) = 1 รายการ <---- ป้องกันเป็น 0
+
+
+        personalized_activities = activities_with_score[:personalized_count] # ตัด list เอาเฉพาะ 80 % แรก ได้กิจกรรมที่มีคะแนนสูงสุด
+        #ตัวอย่างมี 10 รายการเลือกมา 8 รายการ
         
         # เพิ่ม 20% Random (สำหรับ Exploration)
-        used_activity_ids = {item['activity'].id for item in personalized_activities}
-        
+        used_activity_ids = {item['activity'].id for item in personalized_activities} #สร้าง set ของ id กิจกรรมที่เลือกไปแล้ว (80%), กันไว้ไม่ให้ซ้ำ
+         #used_activity_ids = {1,3,4,5,7,9,14,19} 
+
+
+        #เพื่อแก้ปัญหา Filter Bubble (การเห็นแต่สิ่งเดิมๆ) เผื่อ User จะเจอความสนใจใหม่ๆ ที่ไม่เคยรู้ตัวมาก่อน
+        #ดึงกิจกรรมแบบสุ่ม 5 รายการ 
         random_activities = Activity.objects.filter(
-            status__in=['กำลังรับสมัคร', 'กำลังดำเนินการ']
+            status__in=['กำลังรับสมัคร', 'กำลังดำเนินการ']    #เอาเฉพาะที่ยังเปิดรับสมัคร
         ).exclude(
-            id__in=used_activity_ids
-        ).prefetch_related('tag_list').order_by('?')[:5]  # สุ่ม 5 กิจกรรม
-        
+            id__in=used_activity_ids               #ไม่เอาที่ซ้ำกับ 80% ที่เลือกแล้ว 
+        ).prefetch_related('tag_list').order_by('?')[:5]  # สุ่ม 5 กิจกรรม 
+                                     #เรียงแบบสุ่ม
+
         # รวมกัน
-        for activity in random_activities:
+        for activity in random_activities:   #เพิ่มกิจกรรมสุ่มเข้า list
             activities_with_score.append({
                 'activity': activity,
-                'match_score': 0.0,
-                'matched_tags': 0
+                'match_score': 0.0,             #ตั้งคะแนนเป็น 0.0 เพราะไม่ได้คำนวน
+                'matched_tags': 0               #ตั้ง matched_tags เป็น 0 (เพราะไม่ได้ตรงตามความสนใจ)
             })
         
-        # Shuffle เล็กน้อย (เว้น Top 3)
-        top_3 = personalized_activities[:3]
-        rest = personalized_activities[3:] + [
-            {'activity': act, 'match_score': 0.0, 'matched_tags': 0}
+       #ขั้นตอนนี้จะได้ 13 กิจกรรมแล้ว ได้จาก 80% มา 8 กิจกรรม + สุ่มอีก 5 กิจกรรม รวมเป็น 13
+
+        # Shuffle เล็กน้อย (เว้น Top 3)  
+        top_3 = personalized_activities[:3]           # เก็บ 3 อันดับแรกไว้    ต้องอยู่บนสุดเสมอ
+        rest = personalized_activities[3:] + [        # เอาที่เหลือ + ของสุ่ม มารวมกัน   อันดับ 4 เป็นต้นไปคือ 80% ที่เหลือ
+            {'activity': act, 'match_score': 0.0, 'matched_tags': 0}     #กิจกรรมสุ่ม 5 รายการแปลงเป็น Dic Format
             for act in random_activities
         ]
-        random.shuffle(rest)
+        #personalized_activities = 8 รายการ
+        #top_3 = [อันดับ 1,2,3]
+        #rest = [อันดับ 4,5,6,7] + [สุ่ม 1,2,3,4,5]
+        #rest = 10 รายการ
+
+        random.shuffle(rest)                         # เขย่ารวมกัน (Shuffle)
+        #สุ่มเรียงลำดับ rest  ทำให้ได้กิจกรรมแบบสุ่ม
+        #ก่อน shuffle = [อันดับ 4,5,6,7 สุ่ม 1,2,3,4,5]
+        #หลัง shuffle = [สุ่ม2, อันดับ5, สุ่ม4, อันดับ7, สุ่ม1, อันดับ4, .....]
         
-        final_list = top_3 + rest
+        final_list = top_3 + rest                           #รวม top 3 กับ rest ที่ shuffle แล้ว
         final_list = final_list[:20]  # จำกัดแค่ 20 กิจกรรม
         
         # ========================================
         # SERIALIZE RESULT
         # ========================================
-        result = []
-        for item in final_list:
-            data = ActivitySerializer(item['activity'], context={'request': request}).data
-            data['match_score'] = item['match_score']
-            data['matched_tags'] = item['matched_tags']
-            result.append(data)
+        result = []         #สร้าง list เปล่า เพื่อเก็บผลลัพธ์สุดท้าย
+        for item in final_list:       #วนลูกทุกกิจกรรมใน final_list 20 รายการ
+            data = ActivitySerializer(item['activity'], context={'request': request}).data     #แปลง Obj เป็น JSON , .data คือดึงข้อมูลออกมา
+            #เพิ่ม 2 filed เข้าไปใน JSON 
+            data['match_score'] = item['match_score']   #คะแนนความตรงกัน
+            data['matched_tags'] = item['matched_tags']   #จำนวน Tag ที่ตรง 
+            #Frontend สามารถแสดงเป็น ตรงใจ 85% หรือ Badge ได้
+            result.append(data)   #เพิ่ม dic เข้า list result
+
+        #result = [
+        #   {
+        #    'id': 123,
+        #    'name': 'วิ่งมาราธอน',
+        #    'description': " ",
+        #    'match_score': 0.85,  ---->  เพิ่มเข้ามาใหม่
+        #    'matched_tags': 3    ---->  เพิ่มเข้ามาใหม่
+        #    ......
+        #    }
         
         return Response({
-            'activities': result,
-            'recommendation_type': 'personalized',
-            'has_interests': True,
+            'activities': result,   #ส่งข้อมูลกิจกรรม พร้อมคะแนน
+            'recommendation_type': 'personalized',    #บอกประเภทการแนะนำ Fromtend = เป็นการแนะนำสำหรับคุณ
+            'has_interests': True,     # บอกว่า user มีความสนใจแล้ว
             'message': None,
-            'debug_info': {
-                'total_interests': len(user_interests),
-                'personalized_count': len(personalized_activities),
-                'random_count': len(random_activities),
-                'top_tags': [item['tag_id'] for item in interests_with_decay[:5]]
+            'debug_info': {   #เพิ่มการ Debug 
+                'total_interests': len(user_interests),   #จำนวนความสนใจทั้งหมด
+                'personalized_count': len(personalized_activities),   #จำนวนกิจกรรมแนะนำ 80%
+                'random_count': len(random_activities),  #จำนวนกิจกรรมแบบสุ่ม 20%
+                'top_tags': [item['tag_id'] for item in interests_with_decay[:5]]  # Top 5 แท็ก ที่สนใจมากที่สุด
             }
         })
         
-    except Exception as e:
+    except Exception as e:   #จับ error ทุกประเภท ถ้ามี
         print(f"❌ Error in recommended_activities: {e}")
         traceback.print_exc()
         
@@ -636,9 +695,10 @@ def recommended_activities(request):
     
 
 # ========================================
-# 📊 ORGANIZER DASHBOARD STATISTICS
+# 📊 ORGANIZER DASHBOARD STATISTICS : หน้าแดชบอร์ดฝั่งผู้สร้างกิจกรรม
 # ========================================
 
+#แสดงสัดส่วนและรายละเอียดของแดชบอร์ดต่างๆครับ
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def get_faculty_statistics(request):
@@ -731,6 +791,7 @@ def get_faculty_statistics(request):
         }, status=500)
 
 
+#แสดงแนวโน้มการลงทะเบียนของฝั่งผู้จัดกิจกรรม
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def get_registration_trend(request):
@@ -788,3 +849,52 @@ def get_registration_trend(request):
             'labels': ['จ.', 'อ.', 'พ.', 'พฤ.', 'ศ.', 'ส.', 'อา.'],
             'data': [0, 0, 0, 0, 0, 0, 0]
         }, status=500)
+    
+
+
+# -------------------------------------------------------------------------
+# View Functions (Inline definition)
+# -------------------------------------------------------------------------
+
+#แสดงกิจกรรมทั้งหมดที่ user ลงทะเบียนกิจกรรม - หน้ากิจกรรมของฉัน
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def my_registrations(request):
+    """ดึงการลงทะเบียนทั้งหมดของ User"""
+    registrations = Registration.objects.filter(
+        user=request.user
+    ).select_related('activity').order_by('-registered_at')
+    
+    serializer = RegistrationSerializer(
+        registrations, 
+        many=True, 
+        context={'request': request}
+    )
+    return Response(serializer.data)
+
+
+#ยกเลิกการลงทะเบียน
+@api_view(['DELETE'])
+@permission_classes([IsAuthenticated])
+def cancel_registration(request, registration_id):
+    """ยกเลิกการลงทะเบียน"""
+    try:
+        registration = Registration.objects.get(
+            id=registration_id, 
+            user=request.user
+        )
+        activity = registration.activity
+        # คืนจำนวนคนลงทะเบียน
+        activity.registered_count = max(0, activity.registered_count - 1)
+        activity.save()
+        
+        registration.delete()
+        
+        return Response({
+            'message': 'ยกเลิกการลงทะเบียนสำเร็จ'
+        }, status=200)
+        
+    except Registration.DoesNotExist:
+        return Response({
+            'message': 'ไม่พบข้อมูลการลงทะเบียน'
+        }, status=404)

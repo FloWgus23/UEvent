@@ -4,9 +4,10 @@ from .models import Activity, Registration, Tag, UserInterest, ActivityTag
 
 
 # ========================================
-# TAG SYSTEM ADMIN
+# TAG SYSTEM ADMIN : แท็ก
 # ========================================
 
+#(จัดการแท็ก)
 @admin.register(Tag)
 class TagAdmin(admin.ModelAdmin):
     list_display = ['name', 'icon', 'color', 'is_active', 'created_at']
@@ -24,6 +25,7 @@ class TagAdmin(admin.ModelAdmin):
     )
 
 
+#(ดูความสนใจผู้ใช้)
 @admin.register(UserInterest)
 class UserInterestAdmin(admin.ModelAdmin):
     list_display = ['user', 'tag', 'explicit_score', 'implicit_score', 'total_score', 'last_updated']
@@ -58,7 +60,7 @@ class ActivityTagAdmin(admin.ModelAdmin):
 
 
 # ========================================
-# ACTIVITY ADMIN
+# ACTIVITY ADMIN : กิจกรรม 
 # ========================================
 
 class ActivityTagInline(admin.TabularInline):
@@ -101,7 +103,7 @@ class ActivityAdmin(admin.ModelAdmin):
 
 
 # ========================================
-# REGISTRATION ADMIN
+# REGISTRATION ADMIN : คนสมัคร
 # ========================================
 
 @admin.register(Registration)

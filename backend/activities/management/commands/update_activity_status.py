@@ -5,6 +5,7 @@ from django.utils import timezone
 from datetime import datetime
 from activities.models import Activity
 
+#อัปเดตสถานะกิจกรรมอัตโนมัติ
 class Command(BaseCommand):
     help = 'ตรวจสอบและอัปเดตสถานะกิจกรรมที่สิ้นสุดแล้ว'
 

@@ -6,18 +6,18 @@ from .views import (
     UserProfileView,
     upload_profile_image,
     delete_profile_image,
-    request_organizer_role # ⭐
+    request_organizer_role 
 )
 
 urlpatterns = [
-    path('register/', RegisterView.as_view(), name='register'),
-    path('login/', TokenObtainPairView.as_view(), name='login'),
-    path('refresh/', TokenRefreshView.as_view(), name='refresh'),
+    path('register/', RegisterView.as_view(), name='register'),         # ลงทะเบียนสมาชิกใหม่
+    path('login/', TokenObtainPairView.as_view(), name='login'),        # ล็อกอิน: ส่ง User/Pass มา แลกเป็น Token (กุญแจเข้าบ้าน)
+    path('refresh/', TokenRefreshView.as_view(), name='refresh'),       # จุดต่ออายุ: เอา Refresh Token มาแลก Access Token ใหม่ (ไม่ต้องล็อกอินซ้ำ)
     
-    path('me/', UserProfileView.as_view(), name='user-profile'),
-    path('me/upload-image/', upload_profile_image, name='upload-profile-image'),
-    path('me/delete-image/', delete_profile_image, name='delete-profile-image'),
+    path('me/', UserProfileView.as_view(), name='user-profile'),           # ดูข้อมูลส่วนตัว หรือแก้ไขชื่อ/เบอร์โทร
     
-    # ⭐ Path สำหรับขอสิทธิ์
-    path('request-organizer/', request_organizer_role, name='request-organizer'),
+    path('me/upload-image/', upload_profile_image, name='upload-profile-image'),     # อัปโหลดรูปโปรไฟล์ใหม่
+    path('me/delete-image/', delete_profile_image, name='delete-profile-image'),     # ลบรูปโปรไฟล์ทิ้ง (กลับไปใช้รูปเดิม)
+
+    path('request-organizer/', request_organizer_role, name='request-organizer'),     #ส่งเอกสารขอเลื่อนขั้นเป็น "ผู้จัดกิจกรรม"
 ]

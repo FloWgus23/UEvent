@@ -2,6 +2,7 @@ import time
 import subprocess
 from datetime import datetime
 
+#ระบบแจ้งเตือนอัตโนมัติ
 # ตั้งค่า: จะให้เช็คทุกๆ กี่วินาที (แนะนำ 60 วินาที = 1 นาที)
 INTERVAL = 60 
 

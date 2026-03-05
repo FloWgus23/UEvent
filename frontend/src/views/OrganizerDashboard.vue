@@ -424,7 +424,12 @@ const getStatusClass = (status) => {
   const base = "px-3 py-1 rounded-full text-xs font-semibold border"
   if (status === 'กำลังรับสมัคร') return `${base} bg-blue-100 text-blue-700 border-blue-200`
   if (status === 'กำลังดำเนินการ') return `${base} bg-green-100 text-green-700 border-green-200`
-  return `${base} bg-red-100 text-red-700 border-red-200`
+
+  // ⭐ เพิ่มเงื่อนไขสำหรับ 'cancelled' หรือ 'ยกเลิก' ให้เป็นสีแดงชัดเจน
+  if (status === 'cancelled' || status === 'ยกเลิก' || status === 'ยกเลิกกิจกรรม') {
+      return `${base} bg-red-100 text-red-700 border-red-200`
+  }
+  return `${base} bg-gray-100 text-gray-600 border-gray-200`
 }
 
 const getNewsStatusClass = (statusRaw) => {

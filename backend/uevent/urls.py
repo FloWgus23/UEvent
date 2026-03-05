@@ -7,12 +7,10 @@ from django.conf.urls.static import static
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include('activities.urls')),    #กิจกรรม
-     # เพิ่มบรรทัดนี้ครับ เพื่อให้ Vue ยิงมาที่ /api/auth/password_reset/ ได้
-    path('api/auth/password_reset/', include('django_rest_passwordreset.urls', namespace='password_reset')),
+    path('api/auth/password_reset/', include('django_rest_passwordreset.urls', namespace='password_reset')),  #รีเซ็ตรหัสผ่าน
     path('api/auth/', include('users.urls')),    #ผู้ใช้
     path('api/', include('news.urls')),          #ข่าว
-    # ⭐ เพิ่มบรรทัดนี้ครับ!
-    path('api/notifications/', include('notifications.urls')),
+    path('api/notifications/', include('notifications.urls')),  #แจ้งเตือน
 ]
 
 # Serve media files in development

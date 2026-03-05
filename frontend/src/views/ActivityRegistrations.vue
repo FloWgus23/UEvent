@@ -247,17 +247,31 @@ const exportToCSV = () => {
 
   const headers = ['ลำดับ', 'ชื่อผู้ใช้', 'อีเมล', 'เบอร์โทร', 'หมายเหตุ', 'วันที่ลงทะเบียน']
   const rows = registrations.value.map((r, index) => [
-    index + 1,
-    r.user_name || '-',
-    r.user_email || '-',
-    r.phone || '-',
-    r.note || '-',
-    formatDate(r.registered_at)
+  index + 1,
+  r.user_name || '-',
+  r.user_email || '-',
+  r.phone ? `="${r.phone}"` : '-',   // 👈 แก้ตรงนี้ ป้องกัน Scientific Notation
+  r.note || '-',
+  formatDate(r.registered_at)
   ])
 
+  const activityInfo = [
+  `"ชื่อกิจกรรม","${activityName.value}"`,
+  `"วันที่จัด",="${activityDate.value}"`,    // 👈 เปลี่ยนจาก "'${...}" เป็น ="${...}"
+  `"สถานที่","${activityLocation.value}"`,
+  `"จำนวนผู้ลงทะเบียน","${registrations.value.length}/${activityCapacity.value} คน"`,
+  ``
+  ]
+
   const csvContent = [
-    '\ufeff' + headers.join(','),
-    ...rows.map((row) => row.map((cell) => `"${cell}"`).join(','))
+  '\ufeff' + activityInfo.join('\n'),
+  headers.join(','),
+  ...rows.map((row) =>
+    row.map((cell) =>
+      // ถ้า cell เริ่มต้นด้วย =" แสดงว่า format แล้ว ไม่ต้อง wrap เพิ่ม
+      String(cell).startsWith('="') ? cell : `"${cell}"`
+    ).join(',')
+  )
   ].join('\n')
 
   const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
