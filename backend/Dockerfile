@@ -28,4 +28,5 @@ RUN python manage.py collectstatic --noinput
 EXPOSE 8000
 
 # Start gunicorn server
-CMD sh -c "python manage.py migrate --noinput && gunicorn uevent.wsgi:application --bind 0.0.0.0:$PORT --workers 4 --log-file - --access-logfile - --error-logfile -"
+##CMD sh -c "python manage.py migrate --noinput && gunicorn uevent.wsgi:application --bind 0.0.0.0:$PORT --workers 4 --log-file - --access-logfile - --error-logfile -"
+CMD sh -c "python manage.py migrate --noinput && python seed_tags.py && gunicorn uevent.wsgi:application --bind 0.0.0.0:$PORT --workers 4 --log-file - --access-logfile - --error-logfile -"
