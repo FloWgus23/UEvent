@@ -218,6 +218,7 @@
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import axios from 'axios'
+import apiClient from '@/services/api'
 // Import SweetAlert2
 import Swal from 'sweetalert2'
 
@@ -316,7 +317,7 @@ const handleRegister = async () => {
 
     // console.log('Sending Register data:', registerData)
 
-    const response = await axios.post('http://127.0.0.1:8000/api/auth/register/', registerData)
+    const response = await apiClient.post('/auth/register/', registerData)
     
     // console.log('Registration Success:', response.data)
 
