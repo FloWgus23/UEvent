@@ -38,9 +38,14 @@ INSTALLED_APPS = [
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
-    'django.contrib.staticfiles',
+    ##'django.contrib.staticfiles',
     'django_filters',
     'django_rest_passwordreset',
+
+    # เก็บรูปภาพบน server
+    'cloudinary_storage',
+    'django.contrib.staticfiles',
+    'cloudinary',
     
     # Third-party apps
     'rest_framework',
@@ -288,3 +293,12 @@ UNFOLD = {
         ],
     },
 } 
+
+
+DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
+
+CLOUDINARY_STORAGE = {
+    'CLOUD_NAME': os.environ.get('twnq2lm6'),
+    'API_KEY': os.environ.get('992537753363962'),
+    'API_SECRET': os.environ.get('JPap7KdD_T4sZELy9BpDHth9BEU')
+}
