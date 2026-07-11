@@ -298,7 +298,7 @@ UNFOLD = {
 DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
 
 CLOUDINARY_STORAGE = {
-    'CLOUD_NAME': os.environ.get('twnq2lm6'),
-    'API_KEY': os.environ.get('992537753363962'),
-    'API_SECRET': os.environ.get('JPap7KdD_T4sZELy9BpDHth9BEU')
+    'CLOUD_NAME': os.environ.get('CLOUDINARY_CLOUD_NAME'),
+    'API_KEY': os.environ.get('CLOUDINARY_API_KEY'),
+    'API_SECRET': os.environ.get('CLOUDINARY_API_SECRET')
 }
