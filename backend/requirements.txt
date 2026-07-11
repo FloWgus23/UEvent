@@ -143,7 +143,6 @@ python-dateutil==2.9.0.post0
 python-dotenv==1.2.1
 python-multipart==0.0.22
 python-slugify==8.0.4
-pywin32==311
 PyYAML==6.0.2
 queuelib==1.8.0
 referencing==0.37.0
