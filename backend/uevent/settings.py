@@ -38,9 +38,9 @@ INSTALLED_APPS = [
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
+    'django.contrib.staticfiles',
     'cloudinary_storage',        # 👈 เพิ่มตรงนี้
     'cloudinary',                # 👈 เพิ่มตรงนี้
-    'django.contrib.staticfiles',
     'django_filters',
     'django_rest_passwordreset',
  
