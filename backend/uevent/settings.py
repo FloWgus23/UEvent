@@ -172,6 +172,8 @@ STORAGES = {
     },
 }
 
+STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+
 
 
 # Default primary key field type
