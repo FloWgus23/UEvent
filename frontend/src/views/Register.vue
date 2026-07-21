@@ -8,15 +8,15 @@
 
     <button 
       @click="$router.push('/')" 
-      class="fixed top-6 left-6 z-50 flex items-center gap-3 px-2 py-2 pr-5 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-white hover:bg-white/20 transition-all duration-300 group shadow-lg hover:shadow-blue-500/20"
+      class="fixed top-4 left-4 md:top-6 md:left-6 z-50 flex items-center gap-3 px-2 py-2 pr-3 md:pr-5 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-white hover:bg-white/20 transition-all duration-300 group shadow-lg hover:shadow-blue-500/20"
     >
       <div class="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center group-hover:bg-white/20 transition-all border border-white/10">
         <i class="fa-solid fa-arrow-left text-sm group-hover:-translate-x-1 transition-transform"></i>
       </div>
-      <span class="font-medium tracking-wide text-sm text-white/90 group-hover:text-white">กลับหน้าแรก</span>
+      <span class="hidden sm:inline font-medium tracking-wide text-sm text-white/90 group-hover:text-white">กลับหน้าแรก</span>
     </button>
 
-    <div class="w-full max-w-2xl relative z-10">
+    <div class="w-full max-w-2xl relative z-10 mt-14 sm:mt-0">
       <div class="bg-white rounded-3xl shadow-2xl p-8 md:p-12 animate-fade-in-up">
         
         <div class="text-center mb-8">
