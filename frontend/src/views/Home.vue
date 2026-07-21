@@ -13,27 +13,27 @@
 
     <nav class="fixed top-0 w-full z-40 bg-gradient-to-r from-[#0F172A] via-[#1E3A8A] to-[#1E40AF] text-white shadow-lg border-b border-white/10 transition-all duration-300">
       <div class="max-w-7xl mx-auto px-6 py-4">
-        <div class="flex items-center justify-between">
+        <div class="grid grid-cols-3 items-center md:flex md:items-center md:justify-between">
           
-          <router-link to="/" class="text-2xl font-bold tracking-tight flex items-center gap-2 hover:opacity-90 transition-opacity">
+          <button
+            @click="showMobileMenu = !showMobileMenu"
+            class="md:hidden text-white p-2 rounded-lg hover:bg-white/10 transition-colors justify-self-start"
+            aria-label="เปิดเมนู"
+          >
+            <i :class="showMobileMenu ? 'fa-solid fa-xmark' : 'fa-solid fa-bars'" class="text-xl"></i>
+          </button>
+
+          <router-link to="/" class="text-2xl font-bold tracking-tight flex items-center justify-center md:justify-start gap-2 hover:opacity-90 transition-opacity">
             <i class="fa-solid fa-calendar-star text-white text-2xl drop-shadow-md"></i>
             <span class="font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-blue-100">UEvent</span>
           </router-link>
 
-          <div class="flex items-center gap-8">
+          <div class="flex items-center justify-end gap-8">
             <div class="hidden md:flex items-center gap-6 text-[15px] font-medium text-blue-100">
               <router-link to="/" class="hover:text-white hover:bg-white/10 px-3 py-1.5 rounded-lg transition-all" active-class="text-white bg-white/10 font-bold shadow-sm">หน้าแรก</router-link>
               <router-link to="/category" class="hover:text-white hover:bg-white/10 px-3 py-1.5 rounded-lg transition-all" active-class="text-white bg-white/10 font-bold shadow-sm">หมวดหมู่</router-link>
               <router-link to="/news" class="hover:text-white hover:bg-white/10 px-3 py-1.5 rounded-lg transition-all" active-class="text-white bg-white/10 font-bold shadow-sm">ข่าวสาร</router-link>
             </div>
-
-            <button
-              @click="showMobileMenu = !showMobileMenu"
-              class="md:hidden text-white p-2 rounded-lg hover:bg-white/10 transition-colors"
-              aria-label="เปิดเมนู"
-            >
-              <i :class="showMobileMenu ? 'fa-solid fa-xmark' : 'fa-solid fa-bars'" class="text-xl"></i>
-            </button>
 
             <div v-if="isLoggedIn" class="flex items-center gap-4">
               
