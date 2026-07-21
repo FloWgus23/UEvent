@@ -27,6 +27,14 @@
               <router-link to="/news" class="hover:text-white hover:bg-white/10 px-3 py-1.5 rounded-lg transition-all" active-class="text-white bg-white/10 font-bold shadow-sm">ข่าวสาร</router-link>
             </div>
 
+            <button
+              @click="showMobileMenu = !showMobileMenu"
+              class="md:hidden text-white p-2 rounded-lg hover:bg-white/10 transition-colors"
+              aria-label="เปิดเมนู"
+            >
+              <i :class="showMobileMenu ? 'fa-solid fa-xmark' : 'fa-solid fa-bars'" class="text-xl"></i>
+            </button>
+
             <div v-if="isLoggedIn" class="flex items-center gap-4">
               
               <div class="relative">
@@ -135,6 +143,17 @@
           </div>
         </div>
       </div>
+
+      <div
+        v-if="showMobileMenu"
+        class="md:hidden bg-[#1E3A8A]/95 backdrop-blur-xl border-t border-white/10 animate-fade-in-down"
+      >
+        <div class="px-6 py-4 flex flex-col gap-2">
+          <router-link to="/" @click="showMobileMenu = false" class="px-4 py-3 rounded-lg text-blue-100 hover:bg-white/10 hover:text-white font-medium" active-class="bg-white/10 text-white font-bold">หน้าแรก</router-link>
+          <router-link to="/category" @click="showMobileMenu = false" class="px-4 py-3 rounded-lg text-blue-100 hover:bg-white/10 hover:text-white font-medium" active-class="bg-white/10 text-white font-bold">หมวดหมู่</router-link>
+          <router-link to="/news" @click="showMobileMenu = false" class="px-4 py-3 rounded-lg text-blue-100 hover:bg-white/10 hover:text-white font-medium" active-class="bg-white/10 text-white font-bold">ข่าวสาร</router-link>
+        </div>
+      </div>
     </nav>
 
     <div class="pt-32 pb-16 px-6 relative overflow-hidden bg-gradient-to-b from-[#0F172A] to-[#1E3A8A]">
@@ -142,10 +161,10 @@
       <div class="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-indigo-500/20 rounded-full blur-[100px] pointer-events-none"></div>
 
       <div class="max-w-4xl mx-auto text-center mb-10 relative z-10">
-        <h1 class="text-5xl md:text-6xl font-bold tracking-tight text-white mb-6 animate-fade-in-up drop-shadow-lg">
+        <h1 class="text-3xl sm:text-4xl md:text-6xl font-bold tracking-tight text-white mb-6 animate-fade-in-up drop-shadow-lg">
           ค้นหา <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-200 to-white">กิจกรรม</span> ที่ใช่
         </h1>
-        <p class="text-xl text-blue-100 font-light max-w-2xl mx-auto animate-fade-in-up delay-100">
+        <p class="text-base sm:text-lg md:text-xl text-blue-100 font-light max-w-2xl mx-auto animate-fade-in-up delay-100">
           เปิดประสบการณ์ใหม่ในมหาวิทยาลัย ค้นหาและเข้าร่วมกิจกรรมที่คุณสนใจได้ง่ายๆ
         </p>
       </div>
@@ -153,18 +172,20 @@
       <div class="max-w-3xl mx-auto relative z-10 animate-fade-in-up delay-200">
         <div class="relative group">
           <div class="absolute inset-0 bg-blue-400 rounded-full opacity-30 blur-xl group-hover:opacity-50 transition-opacity duration-500"></div>
-          <div class="relative bg-white/10 backdrop-blur-md rounded-full shadow-2xl border border-white/20 flex items-center p-2 pl-6 transition-transform focus-within:scale-[1.01]">
-            <i class="fa-solid fa-magnifying-glass text-blue-200 text-lg mr-3"></i>
-            <input
-              type="text"
-              v-model="searchQuery"
-              @keyup.enter="handleSearch"
-              placeholder="ค้นหาชื่อกิจกรรม, สถานที่, หรือ #แท็ก"
-              class="flex-1 bg-transparent border-none outline-none text-white text-lg placeholder-blue-200/70 h-12 font-medium"
-            />
+          <div class="relative bg-white/10 backdrop-blur-md rounded-2xl sm:rounded-full shadow-2xl border border-white/20 flex flex-col sm:flex-row items-stretch sm:items-center p-2 gap-2 sm:gap-0 sm:pl-6 transition-transform focus-within:scale-[1.01]">
+            <div class="flex items-center flex-1 min-w-0 px-4 sm:px-0">
+              <i class="fa-solid fa-magnifying-glass text-blue-200 text-lg mr-3"></i>
+              <input
+                type="text"
+                v-model="searchQuery"
+                @keyup.enter="handleSearch"
+                placeholder="ค้นหาชื่อกิจกรรม, สถานที่, หรือ #แท็ก"
+                class="flex-1 min-w-0 bg-transparent border-none outline-none text-white text-base sm:text-lg placeholder-blue-200/70 h-12 font-medium"
+              />
+            </div>
             <button 
               @click="handleSearch"
-              class="bg-white hover:bg-blue-50 text-blue-900 px-8 py-3 rounded-full font-bold transition-all shadow-lg active:scale-95"
+              class="bg-white hover:bg-blue-50 text-blue-900 px-6 sm:px-8 py-3 rounded-xl sm:rounded-full font-bold transition-all shadow-lg active:scale-95 shrink-0"
             >
               ค้นหา
             </button>
@@ -413,14 +434,15 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from "vue"
-import { useRouter } from "vue-router"
+import { ref, computed, watch, onMounted, onUnmounted } from "vue"
+import { useRouter, useRoute } from "vue-router"
 import activityService from "@/services/activityService.js"
 import notificationService from "@/services/notificationService.js"
 import authService from "@/services/authService.js"
 import OnboardingModal from "./OnboardingModal.vue" 
 
 const router = useRouter()
+const route = useRoute()
 
 // State
 const searchQuery = ref("")
@@ -429,6 +451,7 @@ const activities = ref([])
 const isLoggedIn = ref(false)
 const isLoading = ref(false)
 const showDropdown = ref(false)
+const showMobileMenu = ref(false)
 const showNotificationDropdown = ref(false)
 const showAdvancedFilter = ref(false)
 const notifications = ref([])
@@ -705,6 +728,10 @@ onMounted(() => {
 onUnmounted(() => {
   window.removeEventListener("storage", checkLoginStatus)
   document.removeEventListener("click", handleClickOutside)
+})
+
+watch(() => route.path, () => {
+  showMobileMenu.value = false
 })
 </script>
 

@@ -15,6 +15,14 @@
             <router-link to="/news" class="hover:text-white hover:bg-white/10 px-3 py-1.5 rounded-lg transition-all" active-class="text-white bg-white/10 font-bold shadow-sm">ข่าวสาร</router-link>
           </div>
 
+          <button
+            @click="showMobileMenu = !showMobileMenu"
+            class="md:hidden text-white p-2 rounded-lg hover:bg-white/10 transition-colors"
+            aria-label="เปิดเมนู"
+          >
+            <i :class="showMobileMenu ? 'fa-solid fa-xmark' : 'fa-solid fa-bars'" class="text-xl"></i>
+          </button>
+
           <div v-if="isLoggedIn" class="flex items-center gap-4">
             
             <div class="relative">
@@ -127,18 +135,31 @@
         </div>
       </div>
     </div>
+
+    <div
+      v-if="showMobileMenu"
+      class="md:hidden bg-[#1E3A8A]/95 backdrop-blur-xl border-t border-white/10 animate-fade-in-down"
+    >
+      <div class="px-6 py-4 flex flex-col gap-2">
+        <router-link to="/" @click="showMobileMenu = false" class="px-4 py-3 rounded-lg text-blue-100 hover:bg-white/10 hover:text-white font-medium" active-class="bg-white/10 text-white font-bold">หน้าแรก</router-link>
+        <router-link to="/category" @click="showMobileMenu = false" class="px-4 py-3 rounded-lg text-blue-100 hover:bg-white/10 hover:text-white font-medium" active-class="bg-white/10 text-white font-bold">หมวดหมู่</router-link>
+        <router-link to="/news" @click="showMobileMenu = false" class="px-4 py-3 rounded-lg text-blue-100 hover:bg-white/10 hover:text-white font-medium" active-class="bg-white/10 text-white font-bold">ข่าวสาร</router-link>
+      </div>
+    </div>
   </nav>
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, watch, onMounted, onUnmounted } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import authService from '@/services/authService'
 import notificationService from '@/services/notificationService'
 
 const router = useRouter()
+const route = useRoute()
 const isLoggedIn = ref(false)
 const showDropdown = ref(false)
+const showMobileMenu = ref(false)
 const showNotificationDropdown = ref(false)
 const dropdownRef = ref(null)
 const userProfile = ref(null)
@@ -262,6 +283,10 @@ onMounted(() => {
   window.addEventListener('storage', checkLoginStatus)
 })
 
+watch(() => route.path, () => {
+  showMobileMenu.value = false
+})
+
 onUnmounted(() => {
   document.removeEventListener('click', handleClickOutside)
   window.removeEventListener('storage', checkLoginStatus)
@@ -306,5 +331,20 @@ onUnmounted(() => {
 
 .animate-scale-in {
   animation: scale-in 0.15s ease-out;
+}
+
+@keyframes fade-in-down {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in-down {
+  animation: fade-in-down 0.2s ease-out;
 }
 </style>

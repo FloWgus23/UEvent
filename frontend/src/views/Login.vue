@@ -17,10 +17,29 @@
               <router-link to="/news" class="hover:text-white hover:bg-white/10 px-3 py-1.5 rounded-lg transition-all">ข่าวสาร</router-link>
             </div>
 
+            <button
+              @click="showMobileMenu = !showMobileMenu"
+              class="md:hidden text-white p-2 rounded-lg hover:bg-white/10 transition-colors"
+              aria-label="เปิดเมนู"
+            >
+              <i :class="showMobileMenu ? 'fa-solid fa-xmark' : 'fa-solid fa-bars'" class="text-xl"></i>
+            </button>
+
             <router-link to="/register" class="bg-white text-blue-900 hover:bg-blue-50 px-5 py-2 rounded-full text-sm font-bold transition-all shadow-lg hover:shadow-xl transform active:scale-95">
               ลงทะเบียน
             </router-link>
           </div>
+        </div>
+      </div>
+
+      <div
+        v-if="showMobileMenu"
+        class="md:hidden bg-[#1E3A8A]/95 backdrop-blur-xl border-t border-white/10 animate-fade-in-down"
+      >
+        <div class="px-6 py-4 flex flex-col gap-2">
+          <router-link to="/" @click="showMobileMenu = false" class="px-4 py-3 rounded-lg text-blue-100 hover:bg-white/10 hover:text-white font-medium">หน้าแรก</router-link>
+          <router-link to="/category" @click="showMobileMenu = false" class="px-4 py-3 rounded-lg text-blue-100 hover:bg-white/10 hover:text-white font-medium">หมวดหมู่</router-link>
+          <router-link to="/news" @click="showMobileMenu = false" class="px-4 py-3 rounded-lg text-blue-100 hover:bg-white/10 hover:text-white font-medium">ข่าวสาร</router-link>
         </div>
       </div>
     </nav>
@@ -107,15 +126,21 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, watch } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import apiClient from '../services/api.js'
 
 const router = useRouter()
+const route = useRoute()
 const username = ref('')
 const password = ref('')
 const error = ref('')
 const isLoading = ref(false)
+const showMobileMenu = ref(false)
+
+watch(() => route.path, () => {
+  showMobileMenu.value = false
+})
 
 const handleLogin = async () => {
   error.value = ""
@@ -191,5 +216,14 @@ const handleLogin = async () => {
   20%, 80% { transform: translate3d(2px, 0, 0); }
   30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
   40%, 60% { transform: translate3d(4px, 0, 0); }
+}
+
+@keyframes fade-in-down {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in-down {
+  animation: fade-in-down 0.2s ease-out;
 }
 </style>
