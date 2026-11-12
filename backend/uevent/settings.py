@@ -53,6 +53,7 @@ INSTALLED_APPS = [
     'activities',
     'news',
     'notifications',
+    'popups',
 ]
 
 MIDDLEWARE = [

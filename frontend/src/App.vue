@@ -1,8 +1,10 @@
 <template>
   <router-view />
+  <PopupAnnouncement />   <!-- เพิ่มบรรทัดนี้ -->
 </template>
 
 <script setup>
+import PopupAnnouncement from "@/components/PopupAnnouncement.vue";   // เพิ่มบรรทัดนี้
 // ไม่ต้อง import อะไร Vue Router จะจัดการเองจะจัดการเอง
 </script>
 

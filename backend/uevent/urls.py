@@ -11,6 +11,7 @@ urlpatterns = [
     path('api/auth/', include('users.urls')),    #ผู้ใช้
     path('api/', include('news.urls')),          #ข่าว
     path('api/notifications/', include('notifications.urls')),  #แจ้งเตือน
+    path("api/popups/", include("popups.urls"))  #ป็อปอัพหน้าจอ
 ]
 
 # Serve media files in development
