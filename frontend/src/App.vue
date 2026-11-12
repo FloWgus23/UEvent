@@ -4,7 +4,7 @@
 </template>
 
 <script setup>
-import PopupAnnouncement from "@/components/PopupAnnouncement.vue";   // เพิ่มบรรทัดนี้
+import PopupAnnouncement from "@/views/PopupAnnouncement.vue";   // เพิ่มบรรทัดนี้
 // ไม่ต้อง import อะไร Vue Router จะจัดการเองจะจัดการเอง
 </script>
 
