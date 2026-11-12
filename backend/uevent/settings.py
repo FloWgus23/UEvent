@@ -288,6 +288,11 @@ UNFOLD = {
                         "icon": "newspaper",
                         "link": reverse_lazy("admin:news_news_changelist"),
                     },
+                    {                                                      # เพิ่มใหม่
+                        "title": "ป๊อปอัป",                                 # เพิ่มใหม่
+                        "icon": "campaign",                                # เพิ่มใหม่
+                        "link": reverse_lazy("admin:popups_popup_changelist"),  # เพิ่มใหม่
+                    },                                                     # เพิ่มใหม่
                 ],
             },
             {

@@ -1,12 +1,13 @@
 from django.conf import settings
 from django.contrib import admin
 from django.utils.html import format_html
+from unfold.admin import ModelAdmin                   # จุดที่ 1: เพิ่มบรรทัดนี้
 
 from .models import Popup
 
 
 @admin.register(Popup)
-class PopupAdmin(admin.ModelAdmin):
+class PopupAdmin(ModelAdmin):                         # จุดที่ 2: เปลี่ยนจาก admin.ModelAdmin
     list_display = ("title", "is_published", "duration_days", "published_at", "end_at")
     list_editable = ("is_published",)
     readonly_fields = ("preview_link", "published_at", "end_at")
