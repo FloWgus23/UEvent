@@ -1,7 +1,8 @@
-import api from "./api";   // ← เปลี่ยนเป็นไฟล์ axios ที่โปรเจคคุณมีอยู่แล้ว
+import api from "./api";
 
+// api.js ใส่ "/api" ให้ใน baseURL แล้ว จึงไม่ต้องใส่ซ้ำ
 export const getActivePopups = () =>
-  api.get("/api/popups/active/").then((r) => r.data);
+  api.get("/popups/active/").then((r) => r.data);
 
 export const getPopupPreview = (token) =>
-  api.get(`/api/popups/preview/${token}/`).then((r) => r.data);
+  api.get(`/popups/preview/${token}/`).then((r) => r.data);

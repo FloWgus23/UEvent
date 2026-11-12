@@ -13,17 +13,15 @@ let delayTimer = null;
 let pending = false;
 let alive = true;
 
-// หน้าที่ไม่ให้ popup ขึ้น ปรับให้ตรงกับ router ของคุณ
-const HIDDEN_PATHS = ["/login", "/register"];
+// หน้าที่ไม่ให้ popup ขึ้น
+const HIDDEN_PATHS = ["/login", "/register", "/forgot-password"];
 
 const isInternal = computed(() => popup.value?.link_url?.startsWith("/"));
 
 const safe = (fn, fallback = null) => { try { return fn(); } catch { return fallback; } };
 
-// ปรับให้ตรงกับชื่อที่โปรเจคคุณเก็บ token ล็อกอิน
-const isLoggedIn = () =>
-  !!(safe(() => localStorage.getItem("access_token")) ||
-     safe(() => localStorage.getItem("token")));
+// โปรเจคนี้เก็บ JWT ไว้ใน localStorage ชื่อ "access"
+const isLoggedIn = () => !!safe(() => localStorage.getItem("access"));
 
 const getDismissed = () =>
   safe(() => JSON.parse(localStorage.getItem("popup-dismissed") || "[]"), []);
@@ -177,7 +175,14 @@ onBeforeUnmount(() => {
   margin: 0; padding: 12px 16px 0;
   overflow-wrap: anywhere;              /* คำยาวหรือลิงก์ยาวไม่ดันกล่องให้ล้น */
 }
-.popup-scroll p { padding-bottom: 12px; white-space: pre-line; }
+.popup-scroll h3 {
+  font-size: 1.125rem; font-weight: 700;
+  line-height: 1.4; color: #111827;
+}
+.popup-scroll p {
+  padding-bottom: 12px; white-space: pre-line;
+  font-size: 0.95rem; line-height: 1.6; color: #4b5563;
+}
 
 .popup-close {
   position: absolute; top: 8px; right: 8px; z-index: 2;
