@@ -20,7 +20,6 @@ const isInternal = computed(() => popup.value?.link_url?.startsWith("/"));
 
 const safe = (fn, fallback = null) => { try { return fn(); } catch { return fallback; } };
 
-// โปรเจคนี้เก็บ JWT ไว้ใน localStorage ชื่อ "access"
 const isLoggedIn = () => !!safe(() => localStorage.getItem("access"));
 
 const getDismissed = () =>
@@ -34,7 +33,7 @@ function startFade() {
   if (s > 0) {
     fadeTimer = setTimeout(() => {
       fading.value = true;
-      removeTimer = setTimeout(close, 600);   // ตรงกับเวลา transition ใน CSS
+      removeTimer = setTimeout(close, 400);
     }, s * 1000);
   }
 }
@@ -43,14 +42,14 @@ function pause() { clearTimers(); fading.value = false; }
 
 function show(p) { popup.value = p; startFade(); }
 
-function close() {                       // กด × / กดพื้นหลัง / จางหายเอง
+function close() {
   clearTimers();
   if (!isPreview.value) safe(() => sessionStorage.setItem("popup-closed", "1"));
   popup.value = null;
   fading.value = false;
 }
 
-function dismissForever() {              // ไม่ต้องแสดงอีก
+function dismissForever() {
   if (!isPreview.value && popup.value) {
     const list = getDismissed();
     if (!list.includes(popup.value.id)) list.push(popup.value.id);
@@ -64,7 +63,7 @@ async function tryShow() {
   pending = true;
   try {
     const previewToken = route.query.popup_preview;
-    if (previewToken) {                                  // โหมดพรีวิวของแอดมิน: ขึ้นทันที
+    if (previewToken) {
       isPreview.value = true;
       show(await getPopupPreview(previewToken));
       return;
@@ -76,14 +75,14 @@ async function tryShow() {
     const next = (await getActivePopups()).find((p) => !dismissed.includes(p.id));
     if (!next) return;
 
-    await new Promise((resolve) => {                     // รอตามที่แอดมินตั้งไว้
+    await new Promise((resolve) => {
       delayTimer = setTimeout(resolve, (next.delay_seconds ?? 3) * 1000);
     });
     if (alive && isLoggedIn() && !popup.value && !HIDDEN_PATHS.includes(route.path)) {
       show(next);
     }
   } catch {
-    /* เงียบไว้ ไม่ให้ popup ทำให้หน้าเว็บพัง */
+    /* เงียบไว้ */
   } finally {
     pending = false;
   }
@@ -96,7 +95,6 @@ onMounted(() => {
   tryShow();
 });
 
-// เปลี่ยนหน้า (รวมถึงหลังล็อกอินแล้วระบบพาไปหน้าอื่น) ให้เช็คใหม่
 watch(() => route.fullPath, tryShow);
 
 onBeforeUnmount(() => {
@@ -111,25 +109,37 @@ onBeforeUnmount(() => {
   <div v-if="popup" class="popup-backdrop" :class="{ fading }" @click="close">
     <div class="popup-card" role="dialog" aria-modal="true" :aria-label="popup.title"
          @click.stop @mouseenter="pause" @mouseleave="startFade">
+      
+      <!-- ปุ่มปิดดีไซน์ใหม่ มินิมอล วางมุมขวาบนของการ์ด -->
+      <button class="popup-close" aria-label="ปิด" @click="close">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
+
       <span v-if="isPreview" class="popup-badge">โหมดพรีวิว (ยังไม่เผยแพร่)</span>
-      <button class="popup-close" aria-label="ปิด" @click="close">×</button>
 
       <div class="popup-scroll">
-        <router-link v-if="popup.image && popup.link_url && isInternal"
-                     :to="popup.link_url" @click="close">
-          <img :src="popup.image" :alt="popup.title" />
-        </router-link>
-        <a v-else-if="popup.image && popup.link_url" :href="popup.link_url"
-           target="_blank" rel="noopener noreferrer">
-          <img :src="popup.image" :alt="popup.title" />
-        </a>
-        <img v-else-if="popup.image" :src="popup.image" :alt="popup.title" />
+        <div v-if="popup.image" class="popup-image-container">
+          <router-link v-if="popup.link_url && isInternal" :to="popup.link_url" @click="close">
+            <img :src="popup.image" :alt="popup.title" />
+          </router-link>
+          <a v-else-if="popup.link_url" :href="popup.link_url" target="_blank" rel="noopener noreferrer">
+            <img :src="popup.image" :alt="popup.title" />
+          </a>
+          <img v-else :src="popup.image" :alt="popup.title" />
+        </div>
 
-        <h3>{{ popup.title }}</h3>
-        <p>{{ popup.message }}</p>
+        <div class="popup-content">
+          <h3>{{ popup.title }}</h3>
+          <p>{{ popup.message }}</p>
+        </div>
       </div>
 
-      <button class="popup-dismiss" @click="dismissForever">ไม่ต้องแสดงอีก</button>
+      <div class="popup-footer">
+        <button class="popup-dismiss" @click="dismissForever">ไม่ต้องแสดงอีก</button>
+      </div>
     </div>
   </div>
 </template>
@@ -139,22 +149,31 @@ onBeforeUnmount(() => {
   position: fixed; top: 0; left: 0; z-index: 1000;
   width: 100%;
   height: 100vh;
-  height: 100dvh;                       /* ความสูงจอจริงบนมือถือ */
+  height: 100dvh;
   display: flex; align-items: center; justify-content: center;
-  padding: max(12px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right))
-           max(12px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left));
-  background: rgba(0, 0, 0, 0.55);
-  transition: opacity 0.6s ease;
+  padding: 16px;
+  background: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(4px);
+  transition: opacity 0.3s ease;
 }
 .popup-backdrop.fading { opacity: 0; pointer-events: none; }
 
 .popup-card {
   position: relative;
   display: flex; flex-direction: column;
-  width: min(100%, 440px);
-  max-height: 100%;                     /* ไม่เกินความสูงจอเสมอ */
-  background: #fff; border-radius: 16px; overflow: hidden;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+  width: min(100%, 420px);
+  max-height: 90vh;
+  max-height: 90dvh;
+  background: #ffffff; 
+  border-radius: 20px; 
+  overflow: hidden;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  animation: popupScaleUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes popupScaleUp {
+  from { opacity: 0; transform: scale(0.95) translateY(10px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
 }
 
 .popup-scroll {
@@ -163,56 +182,89 @@ onBeforeUnmount(() => {
   overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
 }
+
+.popup-image-container {
+  width: 100%;
+  background: #f8fafc;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
 .popup-scroll img {
   display: block; width: 100%; height: auto;
-  max-height: 60vh;
-  max-height: 60dvh;                    /* รูปสูงไม่เกิน 60% ของจอ */
-  object-fit: contain;
-  background: #f3f4f6;
+  max-height: 50vh;
+  object-fit: cover;
 }
-.popup-scroll h3,
-.popup-scroll p {
-  margin: 0; padding: 12px 16px 0;
-  overflow-wrap: anywhere;              /* คำยาวหรือลิงก์ยาวไม่ดันกล่องให้ล้น */
+
+.popup-content {
+  padding: 20px 24px 8px;
 }
+
 .popup-scroll h3 {
-  font-size: 1.125rem; font-weight: 700;
-  line-height: 1.4; color: #111827;
+  margin: 0 0 8px 0;
+  font-size: 1.2rem; 
+  font-weight: 700;
+  line-height: 1.4; 
+  color: #0f172a;
+  overflow-wrap: anywhere;
 }
+
 .popup-scroll p {
-  padding-bottom: 12px; white-space: pre-line;
-  font-size: 0.95rem; line-height: 1.6; color: #4b5563;
+  margin: 0;
+  white-space: pre-line;
+  font-size: 0.95rem; 
+  line-height: 1.6; 
+  color: #475569;
+  overflow-wrap: anywhere;
+}
+
+.popup-footer {
+  padding: 12px 24px 20px;
+  display: flex;
+  justify-content: center;
+  background: #ffffff;
 }
 
 .popup-close {
-  position: absolute; top: 8px; right: 8px; z-index: 2;
-  width: 44px; height: 44px;            /* ขนาดพอให้นิ้วกดง่าย */
-  border: 0; border-radius: 50%;
-  background: rgba(0, 0, 0, 0.55); color: #fff;
-  font-size: 24px; line-height: 1; cursor: pointer;
+  position: absolute; top: 12px; right: 12px; z-index: 10;
+  width: 32px; height: 32px;
+  border: none; border-radius: 50%;
+  background: rgba(255, 255, 255, 0.85); 
+  color: #475569;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  transition: all 0.2s ease;
 }
+.popup-close:hover {
+  background: #ffffff;
+  color: #0f172a;
+  transform: scale(1.05);
+}
+
 .popup-badge {
-  position: absolute; top: 8px; left: 8px; z-index: 2;
-  background: #f59e0b; color: #fff; font-size: 12px;
-  padding: 2px 8px; border-radius: 999px;
+  position: absolute; top: 12px; left: 12px; z-index: 10;
+  background: rgba(245, 158, 11, 0.9); backdrop-filter: blur(4px);
+  color: #fff; font-size: 11px; font-weight: 600;
+  padding: 4px 10px; border-radius: 999px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
 }
+
 .popup-dismiss {
-  flex: none;
-  padding: 10px 16px 14px;
   background: none; border: 0;
-  color: #6b7280; font-size: 13px;
+  color: #94a3b8; font-size: 0.875rem;
   text-decoration: underline; cursor: pointer;
+  transition: color 0.2s;
+}
+.popup-dismiss:hover {
+  color: #64748b;
 }
 
 /* มือถือแนวนอน / จอเตี้ย */
 @media (max-height: 480px) {
-  .popup-scroll img { max-height: 45vh; max-height: 45dvh; }
-  .popup-scroll h3, .popup-scroll p { padding-top: 8px; }
-  .popup-dismiss { padding: 6px 16px 10px; }
-}
-
-/* จอใหญ่ */
-@media (min-width: 1600px) {
-  .popup-card { width: min(100%, 520px); }
+  .popup-scroll img { max-height: 35vh; }
+  .popup-content { padding: 14px 20px 4px; }
+  .popup-footer { padding: 8px 20px 14px; }
 }
 </style>
